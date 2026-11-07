@@ -57,34 +57,28 @@ export function evaluateGate(type: GateType, inputs: BitVector[]): BitVector {
   for (let bit = 0; bit < width; bit++) {
     const bitInputs = inputs.map(inp => inp[bit] || '0');
 
-    // If any input is X, output is generally X for deterministic logic
-    if (bitInputs.includes('X')) {
-      result.push('X');
-      continue;
-    }
-
     switch (type) {
       case 'AND': {
         if (bitInputs.includes('0')) result.push('0');
-        else if (bitInputs.includes('Z')) result.push('X');
+        else if (bitInputs.includes('X') || bitInputs.includes('Z')) result.push('X');
         else result.push('1');
         break;
       }
       case 'NAND': {
         if (bitInputs.includes('0')) result.push('1');
-        else if (bitInputs.includes('Z')) result.push('X');
+        else if (bitInputs.includes('X') || bitInputs.includes('Z')) result.push('X');
         else result.push('0');
         break;
       }
       case 'OR': {
         if (bitInputs.includes('1')) result.push('1');
-        else if (bitInputs.includes('Z')) result.push('X');
+        else if (bitInputs.includes('X') || bitInputs.includes('Z')) result.push('X');
         else result.push('0');
         break;
       }
       case 'NOR': {
         if (bitInputs.includes('1')) result.push('0');
-        else if (bitInputs.includes('Z')) result.push('X');
+        else if (bitInputs.includes('X') || bitInputs.includes('Z')) result.push('X');
         else result.push('1');
         break;
       }
@@ -96,7 +90,7 @@ export function evaluateGate(type: GateType, inputs: BitVector[]): BitVector {
         break;
       }
       case 'XOR': {
-        if (bitInputs.includes('Z')) {
+        if (bitInputs.includes('Z') || bitInputs.includes('X')) {
           result.push('X');
         } else {
           const ones = bitInputs.filter(v => v === '1').length;
@@ -105,7 +99,7 @@ export function evaluateGate(type: GateType, inputs: BitVector[]): BitVector {
         break;
       }
       case 'XNOR': {
-        if (bitInputs.includes('Z')) {
+        if (bitInputs.includes('Z') || bitInputs.includes('X')) {
           result.push('X');
         } else {
           const ones = bitInputs.filter(v => v === '1').length;

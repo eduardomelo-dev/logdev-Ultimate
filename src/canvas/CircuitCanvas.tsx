@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { COMPONENT_METADATA } from '../engine/components';
 import { useCircuitStore } from '../store/circuitStore';
-import { Point, Port, WireEndpoint } from '../types/circuit';
+import { Point, WireEndpoint } from '../types/circuit';
 import {
   GRID_SIZE,
   hitTestComponent,

@@ -1,9 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Play,
   Pause,
   StepForward,
-  RotateCcw,
   Hand,
   MousePointer,
   ZoomIn,
@@ -15,8 +14,11 @@ import {
   Cpu,
   Undo2,
   Redo2,
+  Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
+import { clockCounterDemo, fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
 
 export const Header: React.FC = () => {
   const {
@@ -41,6 +43,7 @@ export const Header: React.FC = () => {
   } = useCircuitStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showDemos, setShowDemos] = useState(false);
 
   const handleExport = () => {
     const data = JSON.stringify({ components, wires }, null, 2);
@@ -69,6 +72,11 @@ export const Header: React.FC = () => {
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleLoadDemo = (demo: any) => {
+    loadCircuit(demo);
+    setShowDemos(false);
   };
 
   return (
@@ -211,7 +219,45 @@ export const Header: React.FC = () => {
           </button>
         </div>
 
-        {/* File Actions */}
+        {/* File & Demo Actions */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDemos(!showDemos)}
+            title="Carregar Circuitos de Exemplo"
+            className="p-2 text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/50 rounded-lg transition text-xs flex items-center gap-1.5 border border-cyan-800/60"
+          >
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="hidden md:inline">Exemplos</span>
+            <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+          </button>
+
+          {showDemos && (
+            <div className="absolute right-0 top-11 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
+              <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
+                Circuitos Prontos
+              </div>
+              <button
+                onClick={() => handleLoadDemo(fullAdderDemo)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
+              >
+                Somador Completo (Full Adder)
+              </button>
+              <button
+                onClick={() => handleLoadDemo(srLatchDemo)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
+              >
+                Latch SR (Memória Básica)
+              </button>
+              <button
+                onClick={() => handleLoadDemo(clockCounterDemo)}
+                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
+              >
+                Contador Binário com Clock
+              </button>
+            </div>
+          )}
+        </div>
+
         <input
           type="file"
           ref={fileInputRef}
