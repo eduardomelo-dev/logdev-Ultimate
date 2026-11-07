@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
+import { clockCounterDemo, fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
 import { Simulator } from '../engine/simulator';
 
 describe('Demo Circuits', () => {
@@ -24,5 +24,20 @@ describe('Demo Circuits', () => {
     sim.step();
     expect(sim.getPinValue('probeQ', 'in')).toEqual(['1']);
     expect(sim.getPinValue('probeQBar', 'in')).toEqual(['0']);
+  });
+
+  it('counts binary pulses in Clock Counter demo', () => {
+    const sim = new Simulator();
+    sim.setCircuit(clockCounterDemo.components, clockCounterDemo.wires);
+    sim.step();
+
+    // Pulse 1: 0 -> 1 -> 0
+    sim.setPinValue('clk1', 'out', ['1']);
+    sim.step();
+    sim.setPinValue('clk1', 'out', ['0']);
+    sim.step();
+
+    // Bit 0 should toggle to 1
+    expect(sim.getPinValue('led1', 'in')).toEqual(['1']);
   });
 });

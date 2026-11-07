@@ -264,6 +264,52 @@ export function renderComponent(
       break;
     }
 
+    case 'SEVEN_SEGMENT': {
+      // 7-segment display with A, B, C, D, E, F, G segments and DP
+      ctx.beginPath();
+      ctx.roundRect(0, 0, meta.width, meta.height, 6);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.stroke();
+
+      const segVal = (portId: string): boolean => {
+        return getPinValue(comp.id, portId)[0] === '1';
+      };
+
+      const drawSegment = (x: number, y: number, w: number, h: number, on: boolean) => {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 2);
+        ctx.fillStyle = on ? '#ef4444' : '#27272a';
+        if (on) {
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 8;
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      };
+
+      // Segment positions
+      drawSegment(16, 12, 28, 5, segVal('a'));      // A (top)
+      drawSegment(40, 16, 5, 22, segVal('b'));      // B (top-right)
+      drawSegment(40, 42, 5, 22, segVal('c'));      // C (bottom-right)
+      drawSegment(16, 63, 28, 5, segVal('d'));      // D (bottom)
+      drawSegment(14, 42, 5, 22, segVal('e'));      // E (bottom-left)
+      drawSegment(14, 16, 5, 22, segVal('f'));      // F (top-left)
+      drawSegment(16, 38, 28, 5, segVal('g'));      // G (middle)
+
+      // Decimal point (DP)
+      ctx.beginPath();
+      ctx.arc(50, 66, 3, 0, Math.PI * 2);
+      ctx.fillStyle = segVal('dp') ? '#ef4444' : '#27272a';
+      if (segVal('dp')) {
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 6;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      break;
+    }
+
     case 'HEX_DISPLAY': {
       const valVec = getPinValue(comp.id, 'in');
       let hexChar = '-';

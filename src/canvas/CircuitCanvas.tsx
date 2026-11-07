@@ -10,7 +10,7 @@ import {
   renderGrid,
   renderWire
 } from './renderer';
-import { routeOrthogonalWire } from './wireRouter';
+import { hitTestWire, routeOrthogonalWire } from './wireRouter';
 
 export const CircuitCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -39,6 +39,7 @@ export const CircuitCanvas: React.FC = () => {
 
   const [draggedCompId, setDraggedCompId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
+  const [hasMovedDuringDrag, setHasMovedDuringDrag] = useState(false);
 
   // Wire drawing state
   const [activeWireStart, setActiveWireStart] = useState<{
@@ -85,9 +86,9 @@ export const CircuitCanvas: React.FC = () => {
       ctx.translate(pan.x, pan.y);
       ctx.scale(zoom, zoom);
 
-      // 2. Draw Wires
+      // 2. Draw Wires with Net Voltage Coloring (detecting contention 'X')
       for (const w of wires) {
-        const val = simulator.getPinValue(w.from.componentId, w.from.portId);
+        const val = simulator.getNetValue(w.from.componentId, w.from.portId);
         const isSelected = selectedIds.includes(w.id);
         renderWire(ctx, w, val, isSelected);
       }
@@ -154,9 +155,10 @@ export const CircuitCanvas: React.FC = () => {
         return;
       }
 
-      // 2. Check Port Hit (for wire drawing)
+      // 2. Check Port Hit (adaptive hit radius for zoom)
+      const adaptivePortRadius = 8 / Math.max(0.4, zoom);
       for (const c of components) {
-        const hitPort = hitTestPort(c, world);
+        const hitPort = hitTestPort(c, world, adaptivePortRadius);
         if (hitPort) {
           const portWorldX = c.x + hitPort.relX;
           const portWorldY = c.y + hitPort.relY;
@@ -197,11 +199,22 @@ export const CircuitCanvas: React.FC = () => {
           selectElement(c.id, e.ctrlKey || e.metaKey);
           setDraggedCompId(c.id);
           setDragOffset({ x: world.x - c.x, y: world.y - c.y });
+          setHasMovedDuringDrag(false);
           return;
         }
       }
 
-      // 4. Clicked empty space -> start panning or clear selection
+      // 4. Check Wire Hit (for selecting wires)
+      const wireHitTolerance = 6 / Math.max(0.4, zoom);
+      for (let i = wires.length - 1; i >= 0; i--) {
+        const w = wires[i];
+        if (hitTestWire(w, world, wireHitTolerance)) {
+          selectElement(w.id, e.ctrlKey || e.metaKey);
+          return;
+        }
+      }
+
+      // 5. Clicked empty space -> start panning or clear selection
       clearSelection();
       setIsPanning(true);
       setPanStart({ x: screenX - pan.x, y: screenY - pan.y });
@@ -228,36 +241,35 @@ export const CircuitCanvas: React.FC = () => {
     }
 
     if (draggedCompId) {
+      setHasMovedDuringDrag(true);
       const newX = snapToGrid(world.x - dragOffset.x);
       const newY = snapToGrid(world.y - dragOffset.y);
 
-      updateComponent(draggedCompId, { x: newX, y: newY });
-
-      // Update connected wires
+      // Update in-place during drag
       const comp = components.find(c => c.id === draggedCompId);
-      if (comp) {
-        const meta = COMPONENT_METADATA[comp.type];
-        if (meta) {
-          // Re-route connected wires
-          const connectedWires = wires.filter(
-            w => w.from.componentId === draggedCompId || w.to.componentId === draggedCompId
-          );
-          for (const w of connectedWires) {
-            const fromComp = components.find(c => c.id === w.from.componentId);
-            const toComp = components.find(c => c.id === w.to.componentId);
-            if (!fromComp || !toComp) continue;
+      if (comp && (comp.x !== newX || comp.y !== newY)) {
+        comp.x = newX;
+        comp.y = newY;
 
-            const fromPort = COMPONENT_METADATA[fromComp.type]?.getPorts(fromComp.inputs, fromComp.bitWidth).find(p => p.id === w.from.portId);
-            const toPort = COMPONENT_METADATA[toComp.type]?.getPorts(toComp.inputs, toComp.bitWidth).find(p => p.id === w.to.portId);
-            if (!fromPort || !toPort) continue;
+        // Re-route connected wires in real-time
+        const connectedWires = wires.filter(
+          w => w.from.componentId === draggedCompId || w.to.componentId === draggedCompId
+        );
+        for (const w of connectedWires) {
+          const fromComp = components.find(c => c.id === w.from.componentId);
+          const toComp = components.find(c => c.id === w.to.componentId);
+          if (!fromComp || !toComp) continue;
 
-            const fromX = (fromComp.id === draggedCompId ? newX : fromComp.x) + fromPort.relX;
-            const fromY = (fromComp.id === draggedCompId ? newY : fromComp.y) + fromPort.relY;
-            const toX = (toComp.id === draggedCompId ? newX : toComp.x) + toPort.relX;
-            const toY = (toComp.id === draggedCompId ? newY : toComp.y) + toPort.relY;
+          const fromPort = COMPONENT_METADATA[fromComp.type]?.getPorts(fromComp.inputs, fromComp.bitWidth).find(p => p.id === w.from.portId);
+          const toPort = COMPONENT_METADATA[toComp.type]?.getPorts(toComp.inputs, toComp.bitWidth).find(p => p.id === w.to.portId);
+          if (!fromPort || !toPort) continue;
 
-            w.points = routeOrthogonalWire({ x: fromX, y: fromY }, { x: toX, y: toY });
-          }
+          const fromX = fromComp.x + fromPort.relX;
+          const fromY = fromComp.y + fromPort.relY;
+          const toX = toComp.x + toPort.relX;
+          const toY = toComp.y + toPort.relY;
+
+          w.points = routeOrthogonalWire({ x: fromX, y: fromY }, { x: toX, y: toY });
         }
       }
     }
@@ -266,7 +278,15 @@ export const CircuitCanvas: React.FC = () => {
   // Mouse Up
   const handleMouseUp = () => {
     setIsPanning(false);
+    if (draggedCompId && hasMovedDuringDrag) {
+      // Commit final position to store with a single history entry
+      const comp = components.find(c => c.id === draggedCompId);
+      if (comp) {
+        updateComponent(draggedCompId, { x: comp.x, y: comp.y });
+      }
+    }
     setDraggedCompId(null);
+    setHasMovedDuringDrag(false);
   };
 
   // Keyboard Shortcuts
@@ -296,3 +316,4 @@ export const CircuitCanvas: React.FC = () => {
     </div>
   );
 };
+

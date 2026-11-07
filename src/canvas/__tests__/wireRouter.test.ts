@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { routeOrthogonalWire } from '../wireRouter';
+import { routeOrthogonalWire, hitTestWire } from '../wireRouter';
 
 describe('Wire Router', () => {
   it('creates clean orthogonal path between two offset points', () => {
@@ -26,5 +26,16 @@ describe('Wire Router', () => {
     expect(path.length).toBe(2);
     expect(path[0]).toEqual({ x: 50, y: 10 });
     expect(path[1]).toEqual({ x: 50, y: 90 });
+  });
+
+  it('detects point near wire segment', () => {
+    const wire = {
+      id: 'w1',
+      from: { componentId: 'a', portId: 'out' },
+      to: { componentId: 'b', portId: 'in' },
+      points: [{ x: 10, y: 10 }, { x: 100, y: 10 }]
+    };
+    expect(hitTestWire(wire, { x: 50, y: 12 }, 5)).toBe(true);
+    expect(hitTestWire(wire, { x: 50, y: 30 }, 5)).toBe(false);
   });
 });

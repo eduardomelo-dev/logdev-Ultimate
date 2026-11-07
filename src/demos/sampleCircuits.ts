@@ -180,5 +180,26 @@ export const clockCounterDemo: CircuitState = {
       to: { componentId: 'led1', portId: 'in' },
       points: routeOrthogonalWire({ x: 260, y: 115 }, { x: 480, y: 120 }),
     },
+    // DFF1 qBar drives DFF2 clk
+    {
+      id: 'w_dff1_dff2_clk',
+      from: { componentId: 'dff1', portId: 'qBar' },
+      to: { componentId: 'dff2', portId: 'clk' },
+      points: routeOrthogonalWire({ x: 260, y: 145 }, { x: 340, y: 145 }),
+    },
+    // DFF2 feedback qBar to d
+    {
+      id: 'w_dff2_feedback',
+      from: { componentId: 'dff2', portId: 'qBar' },
+      to: { componentId: 'dff2', portId: 'd' },
+      points: routeOrthogonalWire({ x: 400, y: 145 }, { x: 340, y: 115 }),
+    },
+    // DFF2 q drives led2
+    {
+      id: 'w_dff2_led2',
+      from: { componentId: 'dff2', portId: 'q' },
+      to: { componentId: 'led2', portId: 'in' },
+      points: routeOrthogonalWire({ x: 400, y: 115 }, { x: 480, y: 200 }),
+    },
   ],
 };
