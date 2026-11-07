@@ -1,0 +1,65 @@
+import React from 'react';
+import { Activity, Grid, Layers, Terminal } from 'lucide-react';
+import { useCircuitStore } from '../store/circuitStore';
+
+export const StatusBar: React.FC = () => {
+  const { isSimulating, tool, ticks, zoom } = useCircuitStore();
+
+  return (
+    <footer className="h-7 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none z-20">
+      <div className="flex items-center gap-4">
+        {/* Simulation state */}
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isSimulating ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+            }`}
+          />
+          <span className="font-medium text-slate-300">
+            {isSimulating ? 'Simulação Ativa' : 'Simulação Pausada'}
+          </span>
+        </div>
+
+        <div className="w-px h-3.5 bg-slate-800" />
+
+        {/* Ticks */}
+        <div className="flex items-center gap-1">
+          <Activity className="w-3 h-3 text-cyan-400" />
+          <span>Ticks:</span>
+          <span className="font-mono text-slate-200 font-semibold">{ticks}</span>
+        </div>
+
+        <div className="w-px h-3.5 bg-slate-800" />
+
+        {/* Active Tool */}
+        <div className="flex items-center gap-1">
+          <span>Modo:</span>
+          <span className="text-cyan-400 font-medium uppercase tracking-wider text-[10px]">
+            {tool === 'poke' ? 'Poke (Interativo)' : 'Editar / Conectar'}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        {/* Help Tip */}
+        <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
+          <Terminal className="w-3 h-3" />
+          <span>Dica: clique em um pino e arraste para criar fios</span>
+        </div>
+
+        <div className="w-px h-3.5 bg-slate-800" />
+
+        {/* Grid & Zoom info */}
+        <div className="flex items-center gap-1">
+          <Grid className="w-3 h-3 text-slate-500" />
+          <span>Grade: 20px</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Layers className="w-3 h-3 text-slate-500" />
+          <span>Escala: {Math.round(zoom * 100)}%</span>
+        </div>
+      </div>
+    </footer>
+  );
+};
