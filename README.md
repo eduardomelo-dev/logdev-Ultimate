@@ -67,7 +67,7 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 A base de código está organizada sob padrões modulares de software:
 
 ```text
-logdev-Ultimate/
+logdev-studio/
 ├── build/                      # Ícones de alta resolução (.png, .ico)
 ├── dist/                       # Build estático otimizado gerado pelo Vite
 ├── electron/
@@ -114,7 +114,7 @@ logdev-Ultimate/
 ### 1. Clonar o repositório
 ```bash
 git clone https://github.com/eduardomelo-dev/logdev-Ultimate.git
-cd logdev-Ultimate
+cd logdev-studio
 ```
 
 ### 2. Instalar dependências
@@ -163,6 +163,18 @@ npm run dist:win
 > Gera dois arquivos em `release/`:
 > 1. `release/logdev-Ultimate Setup 1.0.0.exe` (Instalador com assistente)
 > 2. `release/logdev-Ultimate 1.0.0.exe` (Versão portátil sem instalação)
+
+---
+
+## 📥 Downloads Oficiais (Release v1.0.0)
+
+| Sistema | Arquivo | Tamanho | Como Instalar |
+|---------|---------|---------|---------------|
+| **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.0.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-ultimate-1.0.0.x86_64.rpm) | 91 MB | `sudo dnf install logdev-ultimate-1.0.0.x86_64.rpm` |
+| **Windows (Portable)** | [`logdev-Ultimate 1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate%201.0.0.exe) | 109 MB | Clique 2x — roda direto, sem instalação |
+| **Windows (Instalador)** | [`logdev-Ultimate Setup 1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate%20Setup%201.0.0.exe) | 124 MB | Clique 2x — assistente de instalação |
+
+> 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.0.0
 
 ---
 
