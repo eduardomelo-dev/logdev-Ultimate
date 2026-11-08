@@ -34,9 +34,7 @@
       "target": [
         "rpm"
       ],
-      "category": "Development",
-      "desktopName": "logdev-Ultimate",
-      "icon": "build/icon.png"
+      "category": "Development"
     },
     "win": {
       "target": [
