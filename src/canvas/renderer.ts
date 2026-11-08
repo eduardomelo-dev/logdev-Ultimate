@@ -46,13 +46,16 @@ export function renderWire(
   isSelected: boolean,
   animationOffset = 0,
   animateSignal = false,
-  flowReversed = false
+  flowReversed = false,
+  monochrome = false
 ) {
   if (!wire.points || wire.points.length < 2) return;
 
   const bitVal = value && value.length > 0 ? value[0] : 'Z';
-  const color = isSelected ? '#38bdf8' : getLogicColor(bitVal);
-  const lineWidth = (wire.bitWidth && wire.bitWidth > 1) ? 4.5 : 2.5;
+  const color = monochrome ? '#111827' : isSelected ? '#38bdf8' : getLogicColor(bitVal);
+  const lineWidth = monochrome
+    ? (wire.bitWidth && wire.bitWidth > 1 ? 2 : 1.4)
+    : (wire.bitWidth && wire.bitWidth > 1) ? 4.5 : 2.5;
 
   ctx.save();
   ctx.beginPath();
@@ -67,14 +70,14 @@ export function renderWire(
   ctx.lineJoin = 'round';
 
   // Glow if active 1 or X
-  if (bitVal === '1' || bitVal === 'X') {
+  if (!monochrome && (bitVal === '1' || bitVal === 'X')) {
     ctx.shadowColor = color;
     ctx.shadowBlur = 6;
   }
 
   ctx.stroke();
 
-  if (animateSignal && bitVal === '1' && !isSelected) {
+  if (!monochrome && animateSignal && bitVal === '1' && !isSelected) {
     ctx.beginPath();
     ctx.moveTo(wire.points[0].x, wire.points[0].y);
     for (let i = 1; i < wire.points.length; i++) {
@@ -104,7 +107,8 @@ export function renderComponent(
   ctx: CanvasRenderingContext2D,
   comp: ComponentInstance,
   isSelected: boolean,
-  getPinValue: (compId: string, portId: string) => BitVector
+  getPinValue: (compId: string, portId: string) => BitVector,
+  monochrome = false
 ) {
   const meta = COMPONENT_METADATA[comp.type];
   if (!meta) return;
@@ -117,7 +121,7 @@ export function renderComponent(
 
   // Selection outline
   if (isSelected) {
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = monochrome ? '#111827' : '#38bdf8';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     ctx.strokeRect(-6, -6, meta.width + 12, meta.height + 12);
@@ -126,8 +130,8 @@ export function renderComponent(
 
   // Draw component body
   ctx.lineWidth = 2;
-  ctx.strokeStyle = '#94a3b8'; // Slate border
-  ctx.fillStyle = '#1e293b';   // Dark slate fill
+  ctx.strokeStyle = monochrome ? '#111827' : '#94a3b8';
+  ctx.fillStyle = monochrome ? '#ffffff' : '#1e293b';
 
   switch (comp.type) {
     case 'AND':
@@ -144,7 +148,7 @@ export function renderComponent(
       if (comp.type === 'NAND') {
         ctx.beginPath();
         ctx.arc(meta.width - 4, meta.height / 2, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = monochrome ? '#ffffff' : '#1e293b';
         ctx.fill();
         ctx.stroke();
       }
@@ -165,7 +169,7 @@ export function renderComponent(
       if (comp.type === 'NOR') {
         ctx.beginPath();
         ctx.arc(meta.width - 4, meta.height / 2, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = monochrome ? '#ffffff' : '#1e293b';
         ctx.fill();
         ctx.stroke();
       }
@@ -208,7 +212,7 @@ export function renderComponent(
       if (comp.type === 'XNOR') {
         ctx.beginPath();
         ctx.arc(meta.width - 4, meta.height / 2, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = monochrome ? '#ffffff' : '#1e293b';
         ctx.fill();
         ctx.stroke();
       }
@@ -220,12 +224,12 @@ export function renderComponent(
       const val = comp.state?.value?.[0] || '0';
       ctx.beginPath();
       ctx.roundRect(0, 0, meta.width, meta.height, 6);
-      ctx.fillStyle = val === '1' ? '#14532d' : '#1e293b';
+      ctx.fillStyle = monochrome ? '#ffffff' : val === '1' ? '#14532d' : '#1e293b';
       ctx.fill();
       ctx.stroke();
 
       ctx.font = 'bold 16px monospace';
-      ctx.fillStyle = val === '1' ? '#4ade80' : '#94a3b8';
+      ctx.fillStyle = monochrome ? '#111827' : val === '1' ? '#4ade80' : '#94a3b8';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(val, meta.width / 2, meta.height / 2);
@@ -237,12 +241,12 @@ export function renderComponent(
       const val = getPinValue(comp.id, 'in')[0] || 'Z';
       ctx.beginPath();
       ctx.arc(meta.width / 2, meta.height / 2, 16, 0, Math.PI * 2);
-      ctx.fillStyle = val === '1' ? '#14532d' : '#1e293b';
+      ctx.fillStyle = monochrome ? '#ffffff' : val === '1' ? '#14532d' : '#1e293b';
       ctx.fill();
       ctx.stroke();
 
       ctx.font = 'bold 15px monospace';
-      ctx.fillStyle = getLogicColor(val);
+      ctx.fillStyle = monochrome ? '#111827' : getLogicColor(val);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(val, meta.width / 2, meta.height / 2);
@@ -264,7 +268,7 @@ export function renderComponent(
       ctx.lineTo(26, 14);
       ctx.lineTo(26, 26);
       ctx.lineTo(32, 26);
-      ctx.strokeStyle = val === '1' ? '#22c55e' : '#64748b';
+      ctx.strokeStyle = monochrome ? '#111827' : val === '1' ? '#22c55e' : '#64748b';
       ctx.stroke();
       break;
     }
@@ -273,7 +277,9 @@ export function renderComponent(
       const val = getPinValue(comp.id, 'in')[0] || '0';
       ctx.beginPath();
       ctx.arc(meta.width / 2, meta.height / 2, 14, 0, Math.PI * 2);
-      if (val === '1') {
+      if (monochrome) {
+        ctx.fillStyle = val === '1' ? '#111827' : '#ffffff';
+      } else if (val === '1') {
         ctx.fillStyle = '#ef4444'; // Red glow
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = 12;
@@ -290,7 +296,7 @@ export function renderComponent(
       // 7-segment display with A, B, C, D, E, F, G segments and DP
       ctx.beginPath();
       ctx.roundRect(0, 0, meta.width, meta.height, 6);
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = monochrome ? '#ffffff' : '#0f172a';
       ctx.fill();
       ctx.stroke();
 
@@ -301,8 +307,8 @@ export function renderComponent(
       const drawSegment = (x: number, y: number, w: number, h: number, on: boolean) => {
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, 2);
-        ctx.fillStyle = on ? '#ef4444' : '#27272a';
-        if (on) {
+        ctx.fillStyle = monochrome ? (on ? '#111827' : '#d1d5db') : on ? '#ef4444' : '#27272a';
+        if (on && !monochrome) {
           ctx.shadowColor = '#ef4444';
           ctx.shadowBlur = 8;
         }
@@ -322,8 +328,10 @@ export function renderComponent(
       // Decimal point (DP)
       ctx.beginPath();
       ctx.arc(50, 66, 3, 0, Math.PI * 2);
-      ctx.fillStyle = segVal('dp') ? '#ef4444' : '#27272a';
-      if (segVal('dp')) {
+      ctx.fillStyle = monochrome
+        ? (segVal('dp') ? '#111827' : '#d1d5db')
+        : segVal('dp') ? '#ef4444' : '#27272a';
+      if (segVal('dp') && !monochrome) {
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = 6;
       }
@@ -349,7 +357,7 @@ export function renderComponent(
       ctx.stroke();
 
       ctx.font = 'bold 36px monospace';
-      ctx.fillStyle = hexChar !== '-' ? '#22c55e' : '#475569';
+      ctx.fillStyle = monochrome ? '#111827' : hexChar !== '-' ? '#22c55e' : '#475569';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(hexChar, meta.width / 2, meta.height / 2 - 4);
@@ -364,7 +372,7 @@ export function renderComponent(
       ctx.stroke();
 
       ctx.font = '11px sans-serif';
-      ctx.fillStyle = '#cbd5e1';
+      ctx.fillStyle = monochrome ? '#111827' : '#cbd5e1';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(comp.label || comp.type, meta.width / 2, meta.height / 2);
@@ -376,13 +384,13 @@ export function renderComponent(
   const ports = meta.getPorts(comp.inputs, comp.bitWidth);
   for (const p of ports) {
     const pVal = getPinValue(comp.id, p.id)[0] || 'Z';
-    const portColor = getLogicColor(pVal);
+    const portColor = monochrome ? '#111827' : getLogicColor(pVal);
 
     ctx.beginPath();
     ctx.arc(p.relX, p.relY, 4, 0, Math.PI * 2);
     ctx.fillStyle = portColor;
     ctx.fill();
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = monochrome ? '#ffffff' : '#0f172a';
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }

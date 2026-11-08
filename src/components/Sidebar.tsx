@@ -32,7 +32,7 @@ export const Sidebar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
-  const { addComponent, pan, zoom } = useCircuitStore();
+  const { setPendingComponentType } = useCircuitStore();
 
   const toggleCategory = (catId: string) => {
     setOpenCategories((prev) => ({
@@ -42,12 +42,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const handleAddComponent = (type: ComponentType) => {
-    // Calculate center of visible screen in world coordinates
-    const centerX = (-pan.x + window.innerWidth / 2) / zoom;
-    const centerY = (-pan.y + window.innerHeight / 2) / zoom;
-    const snappedX = Math.round(centerX / 20) * 20;
-    const snappedY = Math.round(centerY / 20) * 20;
-    addComponent(type, snappedX, snappedY);
+    setPendingComponentType(type);
   };
 
   const allComponents = Object.values(COMPONENT_METADATA);
@@ -70,7 +65,7 @@ export const Sidebar: React.FC = () => {
             aria-label="Buscar componentes"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500 transition"
           />
         </div>
       </div>
@@ -88,17 +83,17 @@ export const Sidebar: React.FC = () => {
                 key={comp.type}
                 onClick={() => handleAddComponent(comp.type)}
                 aria-label={`Adicionar ${comp.name}`}
-                className="w-full text-left p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800 border border-slate-800/80 hover:border-cyan-500/50 flex items-center justify-between group transition"
+                className="w-full text-left p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-600 flex items-center justify-between group transition"
               >
                 <div>
-                  <div className="text-xs font-medium text-slate-200 group-hover:text-cyan-400 transition">
+                  <div className="text-xs font-medium text-slate-200 group-hover:text-white transition">
                     {comp.name}
                   </div>
                   <div className="text-[10px] text-slate-400 line-clamp-1">
                     {comp.description}
                   </div>
                 </div>
-                <Plus className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition" />
+                <Plus className="w-4 h-4 text-slate-500 group-hover:text-slate-200 transition" />
               </button>
             ))}
             {filteredComponents.length === 0 && (
@@ -123,7 +118,7 @@ export const Sidebar: React.FC = () => {
                   className="w-full flex items-center justify-between px-2.5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition rounded-lg"
                 >
                   <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4 text-cyan-400" />
+                    <Icon className="w-4 h-4 text-slate-400" />
                     <span>{category.name}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -147,10 +142,10 @@ export const Sidebar: React.FC = () => {
                       onClick={() => handleAddComponent(comp.type)}
                       title={`Adicionar ${comp.name}. ${comp.description}`}
                       aria-label={`Adicionar ${comp.name}`}
-                      className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-slate-800/80 hover:text-cyan-400 text-xs text-slate-300 flex items-center justify-between group transition border border-transparent hover:border-slate-700/60"
+                      className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-slate-800 hover:text-white text-xs text-slate-300 flex items-center justify-between group transition border border-transparent hover:border-slate-700"
                     >
                       <span className="truncate">{comp.name}</span>
-                      <Plus className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition" aria-hidden="true" />
+                      <Plus className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-200 transition" aria-hidden="true" />
                     </button>
                   ))}
                 </div>

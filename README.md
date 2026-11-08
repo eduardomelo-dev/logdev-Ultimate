@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Versão-1.1.0-00f2fe?style=for-the-badge" alt="Versão 1.1.0" />
-  <img src="https://img.shields.io/badge/Testes-33%20Passando-10b981?style=for-the-badge" alt="33 testes passando" />
+  <img src="https://img.shields.io/badge/Versão-1.2.0-64748b?style=for-the-badge" alt="Versão 1.2.0" />
+  <img src="https://img.shields.io/badge/Testes-41%20Passando-10b981?style=for-the-badge" alt="41 testes passando" />
   <img src="https://img.shields.io/badge/Plataformas-Linux%20%7C%20Windows%20%7C%20Web-38bdf8?style=for-the-badge" alt="Multiplataforma" />
   <img src="https://img.shields.io/badge/Licença-MIT-slate?style=for-the-badge" alt="Licença MIT" />
 </p>
@@ -21,16 +21,18 @@
 
 O **logdev-Ultimate** é uma recriação moderna, elegante e reativa de ferramentas clássicas de lógica digital (como Logisim Evolution). Projetado com uma interface dark inspirada em ferramentas profissionais como **Figma** e **VS Code**, o sistema combina um canvas gráfico de alto desempenho a 60 FPS com um motor de simulação discreta de 4 estados elétricos.
 
-Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linux (.rpm)** e **Windows (.exe)**. A versão 1.1.0 acrescenta rotação de componentes, salvamento automático, diagnósticos de simulação e animação dos sinais, preservando as funções existentes.
+Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linux (.rpm)** e **Windows (.exe)**. A versão 1.2.0 oferece uma interface mais neutra e reduz o JavaScript necessário na abertura inicial, mantendo os recursos de simulação e exportação.
 
-### Versão 1.1.0 — Edição, salvamento e simulação
+### Versão 1.2.0 — Interface clean e carregamento otimizado
 
-- **Rotação de componentes:** gire componentes em passos de 90° pelo inspetor ou com `R`; os pinos e as conexões acompanham a orientação.
-- **Autosave e recuperação:** alterações do circuito são salvas localmente e recuperadas na abertura seguinte.
-- **Diagnósticos de simulação:** avisos para contenção, incompatibilidade de largura de barramento e limite de propagação.
-- **Sinais animados:** traços percorrem fios em nível lógico `1` enquanto a simulação está ativa.
-- **Navegação e layout:** categorias da biblioteca começam recolhidas, mostram a quantidade de componentes e podem ser expandidas; painéis laterais respeitam a área disponível, e a busca informa quando não há resultados.
-- **Histórico e atalhos:** rotação integrada ao Undo/Redo, além dos atalhos existentes para desfazer, refazer e editar.
+- **Visual mais clean:** controles e painéis usam uma paleta escura neutra; o logotipo e a marca Ultimate mantêm as cores da identidade visual.
+- **Sinais preservados:** cores que distinguem os estados lógicos no canvas continuam funcionando para não comprometer a leitura dos circuitos.
+- **Carregamento sob demanda:** exportação PDF/JPEG e a biblioteca jsPDF só são carregadas ao pedir a exportação; JSON continua imediato.
+- **Inicialização mais leve:** o bundle principal JavaScript passou de 612,29 kB para 228,01 kB minificado (redução de 62,8%; gzip: de 195,93 kB para 68,49 kB). Os arquivos de exportação e PDF são carregados só quando necessários. O tamanho dos instaladores Electron continua dominado pelo runtime desktop.
+- **Posicionamento no cursor:** escolha um item na biblioteca, mova a prévia centralizada sob o cursor e clique para posicionar alinhado à grade; `Escape` cancela.
+- **Seleção tipo CAD:** arraste da esquerda para a direita para selecionar elementos totalmente dentro da janela; da direita para a esquerda para selecionar tudo que a janela cruzar. Arraste com o botão do meio, `Alt` ou `Shift` para mover o canvas.
+- **Menu de contexto e clipboard:** clique com o botão direito sobre um elemento para recortar, copiar, colar ou excluir; `Ctrl+C`, `Ctrl+X`, `Ctrl+V` e `Delete` também funcionam. Fios entre os componentes copiados acompanham a cópia.
+- **Recursos preservados:** rotação, autosave e recuperação, diagnósticos, animação, Undo/Redo, busca, importação e exportação continuam disponíveis.
 
 ---
 
@@ -52,7 +54,7 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Modo Interativo "Poke" (Mãozinha):**
   - Alterne interruptores, chaves gangorra e pinos de entrada com um clique direto sobre o circuito, observando as ondas de propagação instantaneamente.
 - **Exportação Profissional:**
-  - **Exportar PDF:** Gera diagramas em folha **A4 (Paisagem)** prontos para impressão ou relatórios acadêmicos com enquadramento dinâmico e carimbo de data/hora.
+  - **Exportar PDF:** Gera diagramas em folha **A4 branca e monocromática**, ajustados automaticamente a uma única página; a orientação retrato ou paisagem acompanha o formato do circuito.
   - **Exportar JPEG:** Renderiza imagens nítidas em alta resolução (escala 2x DPI) com fundo escuro elegante.
   - **Exportar/Importar JSON:** Salva e restaura o esquema de circuitos na íntegra.
 - **Histórico com Undo / Redo:** Desfaça (`Ctrl+Z`) e refaça (`Ctrl+Y`) até 30 alterações de circuito.
@@ -66,10 +68,14 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 ## ⚙️ Edição, simulação e salvamento
 
 - Selecione um componente e use **Girar 90°** no inspetor, ou pressione `R`, para rotacioná-lo no sentido horário. O centro do componente é preservado e as conexões são recalculadas.
-- `Ctrl+Z` desfaz e `Ctrl+Y` refaz; `Ctrl+Shift+Z` também refaz. `Delete` remove a seleção e `Escape` cancela a conexão em andamento.
+- Clique em um componente na biblioteca e mova o cursor sobre o canvas para pré-visualizar; clique para posicionar. `Escape` cancela a colocação.
+- Arraste sobre uma área vazia do canvas para selecionar uma janela; a direção do arraste define seleção por janela (esquerda→direita) ou cruzada (direita→esquerda). `Ctrl`/`Cmd` adiciona à seleção.
+- Clique com o botão direito para abrir as ações de recortar, copiar, colar e excluir; `Ctrl+C`, `Ctrl+X`, `Ctrl+V` e `Delete` são atalhos. Arraste um grupo selecionado para movê-lo em conjunto.
+- `Ctrl+Z` desfaz e `Ctrl+Y` refaz; `Ctrl+Shift+Z` também refaz. `Escape` cancela colocação/conexão e limpa a seleção.
 - Use **Pausar**, **Avançar 1 Tick** e o seletor de frequência para controlar a simulação. A animação visual dos fios ativos acompanha o estado de execução.
 - O autosave local é independente da exportação JSON e não envia projetos à rede. Arquivos inválidos ou armazenamento indisponível são reportados na barra de estado e no console.
 - Os avisos de simulação também aparecem no inspetor quando nenhum componente ou fio está selecionado.
+- Uma moldura azul/roxa ao redor da página no navegador integrado é um realce da interface de compartilhamento/VS Code, não uma borda desenhada pelo aplicativo.
 
 ## 🗂️ Biblioteca de Componentes
 
@@ -183,11 +189,11 @@ npm run electron:start
 ```bash
 npm run dist:linux
 ```
-> Gera `release/logdev-ultimate-1.1.0.x86_64.rpm`.
+> Gera `release/logdev-ultimate-1.2.0.x86_64.rpm`.
 
 Para instalar no Fedora/RHEL:
 ```bash
-sudo dnf install release/logdev-ultimate-1.1.0.x86_64.rpm
+sudo dnf install release/logdev-ultimate-1.2.0.x86_64.rpm
 ```
 
 ### Gerar instalador e executável para Windows (.exe)
@@ -195,22 +201,30 @@ sudo dnf install release/logdev-ultimate-1.1.0.x86_64.rpm
 npm run dist:win
 ```
 > Gera dois arquivos em `release/`:
-> 1. `release/logdev-Ultimate Setup 1.1.0.exe` (Instalador com assistente)
-> 2. `release/logdev-Ultimate 1.1.0.exe` (Versão portátil sem instalação)
+> 1. `release/logdev-Ultimate Setup 1.2.0.exe` (Instalador com assistente)
+> 2. `release/logdev-Ultimate 1.2.0.exe` (Versão portátil sem instalação)
 
 ---
 
-## 📥 Downloads Oficiais (Release v1.1.0)
+## 📥 Downloads Oficiais (Release v1.2.0)
 
-Os arquivos da versão clean e otimizada serão publicados em uma release posterior. A versão 1.0.0 continua disponível e inalterada.
+Os arquivos desta versão clean são publicados em uma release separada. As versões v1.0.0 e v1.1.0 permanecem disponíveis e inalteradas.
 
 | Sistema | Arquivo | Tamanho | Como Instalar |
 |---------|---------|---------|---------------|
-| **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.1.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-ultimate-1.1.0.x86_64.rpm) | 91 MB | `sudo dnf install logdev-ultimate-1.1.0.x86_64.rpm` |
-| **Windows (Portable)** | [`logdev-Ultimate 1.1.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-Ultimate%201.1.0.exe) | 110 MB | Clique duas vezes — executa sem instalação |
-| **Windows (Instalador)** | [`logdev-Ultimate Setup 1.1.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-Ultimate%20Setup%201.1.0.exe) | 124 MB | Clique duas vezes e siga o assistente |
+| **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.2.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-ultimate-1.2.0.x86_64.rpm) | A publicar | `sudo dnf install logdev-ultimate-1.2.0.x86_64.rpm` |
+| **Windows (Portable)** | [`logdev-Ultimate.1.2.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-Ultimate.1.2.0.exe) | A publicar | Clique duas vezes — executa sem instalação |
+| **Windows (Instalador)** | [`logdev-Ultimate.Setup.1.2.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-Ultimate.Setup.1.2.0.exe) | A publicar | Clique duas vezes e siga o assistente |
 
-> 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.1.0
+> 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.2.0
+
+## 📥 Downloads anteriores
+
+| Sistema | Release v1.1.0 | Tamanho |
+|---------|----------------|---------|
+| **Linux (Fedora/RHEL)** | [RPM x86_64](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-ultimate-1.1.0.x86_64.rpm) | 91 MB |
+| **Windows (Portable)** | [Executável portátil](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-Ultimate.1.1.0.exe) | 110 MB |
+| **Windows (Instalador)** | [Instalador NSIS](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.1.0/logdev-Ultimate.Setup.1.1.0.exe) | 124 MB |
 
 ---
 
@@ -219,8 +233,8 @@ Os arquivos da versão clean e otimizada serão publicados em uma release poster
 | Sistema | Arquivo | Tamanho | Como Instalar |
 |---------|---------|---------|---------------|
 | **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.0.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-ultimate-1.0.0.x86_64.rpm) | 91 MB | `sudo dnf install logdev-ultimate-1.0.0.x86_64.rpm` |
-| **Windows (Portable)** | [`logdev-Ultimate 1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate%201.0.0.exe) | 109 MB | Clique 2x — roda direto, sem instalação |
-| **Windows (Instalador)** | [`logdev-Ultimate Setup 1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate%20Setup%201.0.0.exe) | 124 MB | Clique 2x — assistente de instalação |
+| **Windows (Portable)** | [`logdev-Ultimate.1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate.1.0.0.exe) | 109 MB | Clique duas vezes — executa sem instalação |
+| **Windows (Instalador)** | [`logdev-Ultimate.Setup.1.0.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.0.0/logdev-Ultimate.Setup.1.0.0.exe) | 124 MB | Clique duas vezes e siga o assistente |
 
 > 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.0.0
 

@@ -22,7 +22,7 @@ export const Inspector: React.FC = () => {
     return (
       <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs text-slate-400 select-none">
         <div className="flex items-center gap-2 text-slate-200 font-semibold mb-3 border-b border-slate-800 pb-2">
-          <Info className="w-4 h-4 text-cyan-400" />
+          <Info className="w-4 h-4 text-slate-400" />
           <span>Informações do Circuito</span>
         </div>
         <div className="space-y-3">
@@ -42,11 +42,11 @@ export const Inspector: React.FC = () => {
           <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
             <div className="flex justify-between">
               <span>Total de Componentes:</span>
-              <span className="font-mono text-cyan-400 font-bold">{components.length}</span>
+              <span className="font-mono text-slate-200 font-bold">{components.length}</span>
             </div>
             <div className="flex justify-between">
               <span>Total de Conexões:</span>
-              <span className="font-mono text-cyan-400 font-bold">{wires.length}</span>
+              <span className="font-mono text-slate-200 font-bold">{wires.length}</span>
             </div>
           </div>
           <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -63,7 +63,7 @@ export const Inspector: React.FC = () => {
       <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs select-none">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2 text-slate-200 font-semibold">
-            <Settings className="w-4 h-4 text-cyan-400" />
+            <Settings className="w-4 h-4 text-slate-400" />
             <span>Fio / Conexão</span>
           </div>
           <button
@@ -109,7 +109,7 @@ export const Inspector: React.FC = () => {
       {/* Title */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <div className="flex items-center gap-2 text-slate-200 font-semibold">
-          <Settings className="w-4 h-4 text-cyan-400" />
+          <Settings className="w-4 h-4 text-slate-400" />
           <span>Inspetor de Propriedades</span>
         </div>
         <button
@@ -131,14 +131,14 @@ export const Inspector: React.FC = () => {
         {/* Label Field */}
         <div>
           <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
-            <Type className="w-3.5 h-3.5 text-cyan-400" />
+            <Type className="w-3.5 h-3.5 text-slate-400" />
             <span>Rótulo (Label)</span>
           </label>
           <input
             type="text"
             value={selectedComp.label || ''}
             onChange={(e) => updateComponent(selectedComp.id, { label: e.target.value })}
-            className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
           />
         </div>
 
@@ -146,13 +146,13 @@ export const Inspector: React.FC = () => {
         {isGateWithInputs && (
           <div>
             <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-cyan-400" />
+              <Hash className="w-3.5 h-3.5 text-slate-400" />
               <span>Número de Entradas</span>
             </label>
             <select
               value={selectedComp.inputs || 2}
               onChange={(e) => updateComponent(selectedComp.id, { inputs: Number(e.target.value) })}
-              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
             >
               {[2, 3, 4, 5, 6, 8].map((n) => (
                 <option key={n} value={n}>
@@ -168,13 +168,13 @@ export const Inspector: React.FC = () => {
         {isBusComponent && (
           <div>
             <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <Layers className="w-3.5 h-3.5 text-slate-400" />
               <span>Largura de Bits</span>
             </label>
             <select
               value={selectedComp.bitWidth || 1}
               onChange={(e) => updateComponent(selectedComp.id, { bitWidth: Number(e.target.value) })}
-              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
             >
               {[1, 2, 4, 8, 16, 32].map((w) => (
                 <option key={w} value={w}>
@@ -189,13 +189,13 @@ export const Inspector: React.FC = () => {
         {/* Direction */}
         <div>
           <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-cyan-400" />
+            <Compass className="w-3.5 h-3.5 text-slate-400" />
             <span>Orientação (Facing)</span>
           </label>
           <select
             value={selectedComp.direction || 'EAST'}
             onChange={(e) => updateComponent(selectedComp.id, { direction: e.target.value as Direction })}
-            className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
           >
             <option value="EAST">Leste (Padrão)</option>
             <option value="SOUTH">Sul</option>
@@ -206,7 +206,7 @@ export const Inspector: React.FC = () => {
 
         <button
           onClick={() => updateComponent(selectedComp.id, { direction: rotateDirection(selectedComp.direction) })}
-          className="w-full flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded px-2.5 py-2 text-slate-300 hover:text-cyan-300 hover:border-cyan-700 transition"
+          className="w-full flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded px-2.5 py-2 text-slate-300 hover:text-white hover:border-slate-600 transition"
           title="Girar componente 90° no sentido horário (R)"
         >
           <RotateCw className="w-4 h-4" />

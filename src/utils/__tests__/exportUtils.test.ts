@@ -2,13 +2,22 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderCircuitToOffscreenCanvas, exportToJpeg, exportToPdf } from '../exportUtils';
 import { ComponentInstance, Wire } from '../../types/circuit';
 
-const { savePdf } = vi.hoisted(() => ({ savePdf: vi.fn() }));
+const { savePdf, pdfOptions, setFillColor, rect, addImage } = vi.hoisted(() => ({
+  savePdf: vi.fn(),
+  pdfOptions: vi.fn(),
+  setFillColor: vi.fn(),
+  rect: vi.fn(),
+  addImage: vi.fn(),
+}));
 
 vi.mock('jspdf', () => ({
   default: class {
-    setFillColor = vi.fn();
-    rect = vi.fn();
-    addImage = vi.fn();
+    constructor(options: unknown) {
+      pdfOptions(options);
+    }
+    setFillColor = setFillColor;
+    rect = rect;
+    addImage = addImage;
     save = savePdf;
   },
 }));
@@ -39,6 +48,28 @@ describe('Export Utils (PDF & JPEG)', () => {
     expect(canvas.height).toBeGreaterThan(0);
   });
 
+  it('renders a monochrome PDF canvas on a white page', () => {
+    const canvasContext = document.createElement('canvas').getContext('2d')!;
+    const paintedFills: string[] = [];
+    const contextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue(canvasContext);
+    const fillRectSpy = vi.spyOn(canvasContext, 'fillRect').mockImplementation(function (this: CanvasRenderingContext2D) {
+      paintedFills.push(String(this.fillStyle));
+    });
+
+    renderCircuitToOffscreenCanvas(
+      dummyComponents,
+      dummyWires,
+      () => ['1'],
+      () => ['1'],
+      { monochrome: true }
+    );
+
+    expect(paintedFills[0]).toBe('#ffffff');
+    fillRectSpy.mockRestore();
+    contextSpy.mockRestore();
+  });
+
   it('triggers JPEG download without errors', () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
@@ -50,10 +81,42 @@ describe('Export Utils (PDF & JPEG)', () => {
     clickSpy.mockRestore();
   });
 
-  it('generates PDF file without crashing', () => {
-    expect(() => {
-      exportToPdf(dummyComponents, dummyWires, () => ['1'], () => ['1'], 'test.pdf');
-    }).not.toThrow();
+  it('generates PDF file without crashing', async () => {
+    await expect(
+      exportToPdf(dummyComponents, dummyWires, () => ['1'], () => ['1'], 'test.pdf')
+    ).resolves.toBeUndefined();
     expect(savePdf).toHaveBeenCalledWith('test.pdf');
+    expect(pdfOptions).toHaveBeenLastCalledWith({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+    expect(setFillColor).toHaveBeenLastCalledWith(255, 255, 255);
+    expect(rect).toHaveBeenLastCalledWith(0, 0, 297, 210, 'F');
+    const [, , x, y, width, height] = addImage.mock.lastCall!;
+    expect(x).toBeGreaterThanOrEqual(12);
+    expect(y).toBeGreaterThanOrEqual(12);
+    expect(x + width).toBeLessThanOrEqual(297 - 12);
+    expect(y + height).toBeLessThanOrEqual(210 - 12);
+  });
+
+  it('uses portrait A4 when the circuit bounding box is taller than it is wide', async () => {
+    await exportToPdf(
+      [
+        { id: 'top', type: 'PIN_INPUT', x: 0, y: 0 },
+        { id: 'bottom', type: 'PIN_OUTPUT', x: 0, y: 1200 },
+      ],
+      [],
+      () => ['0'],
+      () => ['0'],
+      'tall.pdf'
+    );
+
+    expect(pdfOptions).toHaveBeenLastCalledWith({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    expect(rect).toHaveBeenLastCalledWith(0, 0, 210, 297, 'F');
   });
 });

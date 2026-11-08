@@ -1,11 +1,11 @@
-import jsPDF from 'jspdf';
 import { BitVector, ComponentInstance, Wire } from '../types/circuit';
-import { COMPONENT_METADATA } from '../engine/components';
+import { getComponentDimensions } from '../engine/componentGeometry';
 import { renderComponent, renderWire } from '../canvas/renderer';
 
 export interface ExportOptions {
   title?: string;
   backgroundColor?: string;
+  monochrome?: boolean;
 }
 
 /**
@@ -19,7 +19,7 @@ export function renderCircuitToOffscreenCanvas(
   getNetValue: (compId: string, portId: string) => BitVector,
   options: ExportOptions = {}
 ): HTMLCanvasElement {
-  const bgColor = options.backgroundColor || '#0b0f19';
+  const bgColor = options.backgroundColor || (options.monochrome ? '#ffffff' : '#0b0f19');
   const padding = 60;
 
   // Determine bounding box
@@ -35,13 +35,11 @@ export function renderCircuitToOffscreenCanvas(
     maxY = 600;
   } else {
     for (const c of components) {
-      const meta = COMPONENT_METADATA[c.type];
-      const w = meta ? meta.width : 60;
-      const h = meta ? meta.height : 50;
+      const { width, height } = getComponentDimensions(c);
       if (c.x < minX) minX = c.x;
       if (c.y < minY) minY = c.y;
-      if (c.x + w > maxX) maxX = c.x + w;
-      if (c.y + h > maxY) maxY = c.y + h;
+      if (c.x + width > maxX) maxX = c.x + width;
+      if (c.y + height > maxY) maxY = c.y + height;
     }
 
     for (const w of wires) {
@@ -78,11 +76,11 @@ export function renderCircuitToOffscreenCanvas(
 
   // Header Title
   ctx.font = 'bold 18px sans-serif';
-  ctx.fillStyle = '#38bdf8'; // Cyan
+  ctx.fillStyle = options.monochrome ? '#111827' : '#38bdf8';
   ctx.fillText(options.title || 'logdev-Ultimate — Diagrama de Circuito Lógico', padding, 36);
 
   ctx.font = '11px monospace';
-  ctx.fillStyle = '#64748b';
+  ctx.fillStyle = options.monochrome ? '#4b5563' : '#64748b';
   const now = new Date().toLocaleString();
   ctx.fillText(`Gerado em: ${now} | Componentes: ${components.length} | Fios: ${wires.length}`, padding, 52);
 
@@ -90,7 +88,7 @@ export function renderCircuitToOffscreenCanvas(
   ctx.beginPath();
   ctx.moveTo(padding, 60);
   ctx.lineTo(canvasWidth - padding, 60);
-  ctx.strokeStyle = '#1e293b';
+  ctx.strokeStyle = options.monochrome ? '#9ca3af' : '#1e293b';
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -103,19 +101,19 @@ export function renderCircuitToOffscreenCanvas(
   // Render Wires
   for (const w of wires) {
     const val = getNetValue(w.from.componentId, w.from.portId);
-    renderWire(ctx, w, val, false);
+    renderWire(ctx, w, val, false, 0, false, false, options.monochrome);
   }
 
   // Render Components
   for (const c of components) {
-    renderComponent(ctx, c, false, (compId, portId) => getPinValue(compId, portId));
+    renderComponent(ctx, c, false, (compId, portId) => getPinValue(compId, portId), options.monochrome);
   }
 
   ctx.restore();
 
   // Footer Watermark
   ctx.font = '10px sans-serif';
-  ctx.fillStyle = '#475569';
+  ctx.fillStyle = options.monochrome ? '#4b5563' : '#475569';
   ctx.textAlign = 'right';
   ctx.fillText('logdev-Ultimate Digital Logic CAD', canvasWidth - padding, canvasHeight - 15);
 
@@ -142,28 +140,35 @@ export function exportToJpeg(
 }
 
 /**
- * Exports the circuit as a vector-ready A4 PDF document using jsPDF.
+ * Exports the circuit as a monochrome A4 PDF that fits the full diagram on one page.
  */
-export function exportToPdf(
+export async function exportToPdf(
   components: ComponentInstance[],
   wires: Wire[],
   getPinValue: (compId: string, portId: string) => BitVector,
   getNetValue: (compId: string, portId: string) => BitVector,
   filename = `circuito_logdev_${Date.now()}.pdf`
 ) {
-  const canvas = renderCircuitToOffscreenCanvas(components, wires, getPinValue, getNetValue);
+  const { default: jsPDF } = await import('jspdf');
+  const canvas = renderCircuitToOffscreenCanvas(
+    components,
+    wires,
+    getPinValue,
+    getNetValue,
+    { backgroundColor: '#ffffff', monochrome: true }
+  );
   const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-  // Landscape A4: 297mm x 210mm
+  const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
   const pdf = new jsPDF({
-    orientation: 'landscape',
+    orientation,
     unit: 'mm',
     format: 'a4',
   });
 
-  const pageWidth = 297;
-  const pageHeight = 210;
-  const margin = 10;
+  const pageWidth = orientation === 'landscape' ? 297 : 210;
+  const pageHeight = orientation === 'landscape' ? 210 : 297;
+  const margin = 12;
   const maxWidth = pageWidth - margin * 2;
   const maxHeight = pageHeight - margin * 2;
 
@@ -179,8 +184,7 @@ export function exportToPdf(
   const posX = (pageWidth - renderWidth) / 2;
   const posY = (pageHeight - renderHeight) / 2;
 
-  // Set dark PDF page background
-  pdf.setFillColor(11, 15, 25);
+  pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
   // Insert image

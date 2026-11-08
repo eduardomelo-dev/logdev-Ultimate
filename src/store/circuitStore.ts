@@ -30,6 +30,8 @@ interface CircuitStoreState {
   wires: Wire[];
   /** IDs of currently selected components or wires */
   selectedIds: string[];
+  /** Component type currently attached to the pointer for placement */
+  pendingComponentType: ComponentType | null;
   /** Active user interaction tool ('select' | 'poke' | 'wire' | 'delete') */
   tool: ToolType;
   /** Canvas viewport zoom scale factor (0.3 to 2.5) */
@@ -53,6 +55,14 @@ interface CircuitStoreState {
   // Actions
   /** Adds a new component to the canvas at given coordinates */
   addComponent: (type: ComponentType, x: number, y: number) => ComponentInstance;
+  /** Starts or cancels pointer-based component placement */
+  setPendingComponentType: (type: ComponentType | null) => void;
+  /** Selects a set of components and wires */
+  setSelectedIds: (ids: string[]) => void;
+  /** Moves several components and reroutes their connected wires as one edit */
+  moveComponents: (positions: Array<Pick<ComponentInstance, 'id' | 'x' | 'y'>>) => void;
+  /** Pastes a copied circuit, optionally anchored at a world-space position */
+  pasteCircuit: (circuit: CircuitState, anchor?: Point) => void;
   /** Updates component properties or position */
   updateComponent: (id: string, updates: Partial<ComponentInstance>) => void;
   /** Selects or deselects an element */
@@ -121,6 +131,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
     components: [],
     wires: [],
     selectedIds: [],
+    pendingComponentType: null,
     tool: 'select',
     zoom: 1,
     pan: { x: 0, y: 0 },
@@ -157,6 +168,81 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       syncSimulator(nextComponents, get().wires);
       pushHistory(nextComponents, get().wires);
       return newComp;
+    },
+
+    setPendingComponentType: (type: ComponentType | null) => {
+      set(type ? { pendingComponentType: type, tool: 'select' } : { pendingComponentType: type });
+    },
+
+    setSelectedIds: (ids: string[]) => {
+      set({ selectedIds: [...new Set(ids)] });
+    },
+
+    moveComponents: (positions) => {
+      const { components, wires } = get();
+      const positionById = new Map(positions.map(({ id, x, y }) => [id, { x, y }]));
+      const movedIds = new Set(positionById.keys());
+      if (movedIds.size === 0) return;
+
+      const nextComponents = components.map(component => {
+        const position = positionById.get(component.id);
+        return position ? { ...component, ...position } : component;
+      });
+      const nextWires = wires.map(wire => {
+        if (!movedIds.has(wire.from.componentId) && !movedIds.has(wire.to.componentId)) {
+          return wire;
+        }
+        const fromComponent = nextComponents.find(component => component.id === wire.from.componentId);
+        const toComponent = nextComponents.find(component => component.id === wire.to.componentId);
+        const from = fromComponent && getPortWorldPosition(fromComponent, wire.from.portId);
+        const to = toComponent && getPortWorldPosition(toComponent, wire.to.portId);
+        return from && to ? { ...wire, points: routeOrthogonalWire(from, to) } : wire;
+      });
+
+      set({ components: nextComponents, wires: nextWires });
+      syncSimulator(nextComponents, nextWires);
+      pushHistory(nextComponents, nextWires);
+    },
+
+    pasteCircuit: (circuit: CircuitState, anchor?: Point) => {
+      if (circuit.components.length === 0) return;
+      const minX = Math.min(...circuit.components.map(component => component.x));
+      const minY = Math.min(...circuit.components.map(component => component.y));
+      const offsetX = anchor ? anchor.x - minX : 40;
+      const offsetY = anchor ? anchor.y - minY : 40;
+      const idMap = new Map<string, string>();
+      const pastedComponents = circuit.components.map(component => {
+        const id = `${component.type.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        idMap.set(component.id, id);
+        return {
+          ...JSON.parse(JSON.stringify(component)) as ComponentInstance,
+          id,
+          x: component.x + offsetX,
+          y: component.y + offsetY,
+        };
+      });
+      const pastedWires = circuit.wires.flatMap(wire => {
+        const fromId = idMap.get(wire.from.componentId);
+        const toId = idMap.get(wire.to.componentId);
+        if (!fromId || !toId) return [];
+        return [{
+          ...JSON.parse(JSON.stringify(wire)) as Wire,
+          id: `wire_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          from: { ...wire.from, componentId: fromId },
+          to: { ...wire.to, componentId: toId },
+          points: wire.points.map(point => ({ x: point.x + offsetX, y: point.y + offsetY })),
+        }];
+      });
+      const { components, wires } = get();
+      const nextComponents = [...components, ...pastedComponents];
+      const nextWires = [...wires, ...pastedWires];
+      set({
+        components: nextComponents,
+        wires: nextWires,
+        selectedIds: [...pastedComponents.map(component => component.id), ...pastedWires.map(wire => wire.id)],
+      });
+      syncSimulator(nextComponents, nextWires);
+      pushHistory(nextComponents, nextWires);
     },
 
     updateComponent: (id: string, updates: Partial<ComponentInstance>) => {
@@ -256,7 +342,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
     },
 
     setTool: (tool: ToolType) => {
-      set({ tool });
+      set({ tool, ...(tool === 'select' ? {} : { pendingComponentType: null }) });
     },
 
     setZoom: (zoomOrUpdater) => {
@@ -333,6 +419,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         components: [],
         wires: [],
         selectedIds: [],
+        pendingComponentType: null,
         ticks: 0,
         simulator: newSim,
         history: [{ components: [], wires: [] }],
@@ -348,6 +435,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         components: circuit.components,
         wires: circuit.wires,
         selectedIds: [],
+        pendingComponentType: null,
         simulator: newSim,
         history: [{ components: circuit.components, wires: circuit.wires }],
         historyIndex: 0,

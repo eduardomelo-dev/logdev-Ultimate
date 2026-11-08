@@ -73,4 +73,59 @@ describe('Circuit Store', () => {
     expect(undone.wires[0].points[undone.wires[0].points.length - 1])
       .toEqual(getPortWorldPosition(restoredGate, 'in0'));
   });
+
+  it('pastes selected components and their internal wires as one undoable edit', () => {
+    const store = useCircuitStore.getState();
+    const input = store.addComponent('PIN_INPUT', 0, 0);
+    const output = store.addComponent('PIN_OUTPUT', 100, 0);
+    const wire = store.addWire(
+      { componentId: input.id, portId: 'out' },
+      { componentId: output.id, portId: 'in' },
+      [{ x: 40, y: 20 }, { x: 100, y: 20 }]
+    );
+
+    useCircuitStore.getState().pasteCircuit(
+      { components: [input, output], wires: [wire] },
+      { x: 200, y: 80 }
+    );
+
+    const pasted = useCircuitStore.getState();
+    expect(pasted.components).toHaveLength(4);
+    expect(pasted.wires).toHaveLength(2);
+    const pastedComponents = pasted.components.slice(2);
+    const pastedWire = pasted.wires[1];
+    expect(pastedComponents.map(component => [component.x, component.y])).toEqual([[200, 80], [300, 80]]);
+    expect(pastedWire.from.componentId).toBe(pastedComponents[0].id);
+    expect(pastedWire.to.componentId).toBe(pastedComponents[1].id);
+    expect(pastedWire.points).toEqual([{ x: 240, y: 100 }, { x: 300, y: 100 }]);
+
+    pasted.undo();
+    expect(useCircuitStore.getState().components).toHaveLength(2);
+    expect(useCircuitStore.getState().wires).toHaveLength(1);
+  });
+
+  it('moves a component group and reroutes its wires in one undoable edit', () => {
+    const store = useCircuitStore.getState();
+    const input = store.addComponent('PIN_INPUT', 0, 0);
+    const gate = store.addComponent('AND', 120, 0);
+    store.addWire(
+      { componentId: input.id, portId: 'out' },
+      { componentId: gate.id, portId: 'in0' },
+      [{ x: 40, y: 20 }, { x: 120, y: 17 }]
+    );
+
+    useCircuitStore.getState().moveComponents([
+      { id: input.id, x: 40, y: 60 },
+      { id: gate.id, x: 160, y: 60 },
+    ]);
+
+    const moved = useCircuitStore.getState();
+    expect(moved.components.map(component => [component.x, component.y])).toEqual([[40, 60], [160, 60]]);
+    expect(moved.wires[0].points[moved.wires[0].points.length - 1])
+      .toEqual(getPortWorldPosition(moved.components[1], 'in0'));
+
+    moved.undo();
+    expect(useCircuitStore.getState().components.map(component => [component.x, component.y]))
+      .toEqual([[0, 0], [120, 0]]);
+  });
 });

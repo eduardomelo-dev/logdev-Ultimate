@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
 import { LogdevLogo } from './LogdevLogo';
-import { exportToJpeg, exportToPdf } from '../utils/exportUtils';
 import { parseCircuitData } from '../utils/circuitPersistence';
 
 export const Header: React.FC = () => {
@@ -49,26 +48,38 @@ export const Header: React.FC = () => {
     setShowExportMenu(false);
   };
 
-  const handleExportPdf = () => {
-    exportToPdf(
-      components,
-      wires,
-      (compId, portId) => simulator.getPinValue(compId, portId),
-      (compId, portId) => simulator.getNetValue(compId, portId),
-      `logdev_circuito_${Date.now()}.pdf`
-    );
-    setShowExportMenu(false);
+  const handleExportPdf = async () => {
+    try {
+      const { exportToPdf } = await import('../utils/exportUtils');
+      await exportToPdf(
+        components,
+        wires,
+        (compId, portId) => simulator.getPinValue(compId, portId),
+        (compId, portId) => simulator.getNetValue(compId, portId),
+        `logdev_circuito_${Date.now()}.pdf`
+      );
+      setShowExportMenu(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado.';
+      alert(`Não foi possível exportar o PDF: ${message}`);
+    }
   };
 
-  const handleExportJpeg = () => {
-    exportToJpeg(
-      components,
-      wires,
-      (compId, portId) => simulator.getPinValue(compId, portId),
-      (compId, portId) => simulator.getNetValue(compId, portId),
-      `logdev_circuito_${Date.now()}.jpg`
-    );
-    setShowExportMenu(false);
+  const handleExportJpeg = async () => {
+    try {
+      const { exportToJpeg } = await import('../utils/exportUtils');
+      exportToJpeg(
+        components,
+        wires,
+        (compId, portId) => simulator.getPinValue(compId, portId),
+        (compId, portId) => simulator.getNetValue(compId, portId),
+        `logdev_circuito_${Date.now()}.jpg`
+      );
+      setShowExportMenu(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado.';
+      alert(`Não foi possível exportar o JPEG: ${message}`);
+    }
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,10 +100,10 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-md">
+    <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
       {/* Brand & System Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-600 to-emerald-500 p-0.5 shadow-lg shadow-cyan-950/50 flex items-center justify-center">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-600 to-emerald-500 p-0.5 shadow-md shadow-cyan-950/30 flex items-center justify-center">
           <LogdevLogo size={9} className="w-full h-full rounded-[10px] object-contain drop-shadow" />
         </div>
         <div>
@@ -118,8 +129,8 @@ export const Header: React.FC = () => {
           title="Ferramenta Poke (Mãozinha): clique em chaves e pinos para interagir"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
             tool === 'poke'
-              ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-600/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'bg-slate-700 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
           }`}
         >
           <Hand className="w-4 h-4" />
@@ -128,15 +139,15 @@ export const Header: React.FC = () => {
 
         <button
           onClick={() => setTool('select')}
-          title="Ferramenta Seleção / Edição"
+          title="Ferramenta de seleção. Arraste no canvas para selecionar vários elementos."
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
             tool === 'select'
-              ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-600/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'bg-slate-700 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
           }`}
         >
           <MousePointer className="w-4 h-4" />
-          <span>Editar</span>
+          <span>Selecionar</span>
         </button>
 
         <div className="w-px h-5 bg-slate-800 mx-1" />
@@ -147,7 +158,7 @@ export const Header: React.FC = () => {
           title={isSimulating ? 'Pausar Simulação' : 'Iniciar Simulação Contínua'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
             isSimulating
-              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/40'
+              ? 'bg-slate-700 text-slate-100'
               : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
           }`}
         >
@@ -169,7 +180,7 @@ export const Header: React.FC = () => {
           <select
             value={clockFrequency}
             onChange={(e) => setClockFrequency(Number(e.target.value))}
-            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+            className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:outline-none focus:border-slate-500"
           >
             <option value={1}>1 Hz</option>
             <option value={2}>2 Hz</option>
@@ -192,7 +203,7 @@ export const Header: React.FC = () => {
           <button
             onClick={() => fileInputRef.current?.click()}
             title="Importar Arquivo JSON"
-            className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
+            className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
           >
             <Upload className="w-4 h-4" />
             <span className="hidden md:inline">Importar</span>
@@ -205,9 +216,9 @@ export const Header: React.FC = () => {
                 setShowExportMenu(!showExportMenu);
               }}
               title="Exportar Circuito (PDF, JPEG, JSON)"
-              className="p-2 text-slate-200 hover:text-white bg-gradient-to-r from-slate-800 to-slate-800/90 hover:from-slate-700 hover:to-slate-700/90 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
+              className="p-2 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
             >
-              <Download className="w-4 h-4 text-cyan-400" />
+              <Download className="w-4 h-4 text-slate-300" />
               <span className="hidden md:inline">Exportar</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
@@ -219,9 +230,9 @@ export const Header: React.FC = () => {
                 </div>
                 <button
                   onClick={handleExportPdf}
-                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-white flex items-center gap-2 transition"
                 >
-                  <FileText className="w-4 h-4 text-red-400" />
+                  <FileText className="w-4 h-4 text-slate-400" />
                   <div>
                     <div className="font-medium">Exportar PDF</div>
                     <div className="text-[10px] text-slate-400">Diagrama em folha A4</div>
@@ -229,9 +240,9 @@ export const Header: React.FC = () => {
                 </button>
                 <button
                   onClick={handleExportJpeg}
-                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-white flex items-center gap-2 transition"
                 >
-                  <ImageIcon className="w-4 h-4 text-emerald-400" />
+                  <ImageIcon className="w-4 h-4 text-slate-400" />
                   <div>
                     <div className="font-medium">Exportar JPEG</div>
                     <div className="text-[10px] text-slate-400">Imagem de alta definição</div>
@@ -239,9 +250,9 @@ export const Header: React.FC = () => {
                 </button>
                 <button
                   onClick={handleExportJson}
-                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-white flex items-center gap-2 transition"
                 >
-                  <Code2 className="w-4 h-4 text-cyan-400" />
+                  <Code2 className="w-4 h-4 text-slate-400" />
                   <div>
                     <div className="font-medium">Exportar JSON</div>
                     <div className="text-[10px] text-slate-400">Arquivo de projeto nativo</div>
@@ -255,7 +266,7 @@ export const Header: React.FC = () => {
           <button
             onClick={resetCircuit}
             title="Limpar Área de Trabalho"
-            className="p-2 text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 rounded-lg transition text-xs flex items-center gap-1.5 border border-red-900/50"
+            className="p-2 text-slate-400 hover:text-red-300 bg-slate-800 hover:bg-red-950/30 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 hover:border-red-900/50"
           >
             <Trash2 className="w-4 h-4" />
             <span className="hidden md:inline">Limpar</span>
