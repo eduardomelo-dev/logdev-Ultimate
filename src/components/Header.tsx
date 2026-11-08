@@ -16,6 +16,7 @@ import {
 import { useCircuitStore } from '../store/circuitStore';
 import { LogdevLogo } from './LogdevLogo';
 import { exportToJpeg, exportToPdf } from '../utils/exportUtils';
+import { parseCircuitData } from '../utils/circuitPersistence';
 
 export const Header: React.FC = () => {
   const {
@@ -76,12 +77,11 @@ export const Header: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.components && parsed.wires) {
-          loadCircuit(parsed);
-        }
-      } catch (err) {
-        alert('Erro ao carregar arquivo de circuito.');
+        const parsed = parseCircuitData(JSON.parse(String(event.target?.result)));
+        loadCircuit(parsed);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Erro inesperado.';
+        alert(`Não foi possível carregar o circuito: ${message}`);
       }
     };
     reader.readAsText(file);

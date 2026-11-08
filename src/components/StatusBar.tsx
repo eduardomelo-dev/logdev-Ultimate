@@ -1,9 +1,15 @@
 import React from 'react';
-import { Activity, Grid, Layers, Terminal } from 'lucide-react';
+import { Activity, AlertTriangle, Grid, Layers, Save, Terminal } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
+import { PersistenceStatus } from '../hooks/useCircuitPersistence';
 
-export const StatusBar: React.FC = () => {
-  const { isSimulating, tool, ticks, zoom } = useCircuitStore();
+interface StatusBarProps {
+  persistenceStatus: PersistenceStatus;
+}
+
+export const StatusBar: React.FC<StatusBarProps> = ({ persistenceStatus }) => {
+  const { isSimulating, tool, ticks, zoom, simulator } = useCircuitStore();
+  const diagnostics = simulator.getDiagnostics();
 
   return (
     <footer className="h-7 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none z-20">
@@ -38,9 +44,25 @@ export const StatusBar: React.FC = () => {
             {tool === 'poke' ? 'Poke (Interativo)' : 'Editar / Conectar'}
           </span>
         </div>
+
+        <div className="flex items-center gap-1" title={diagnostics.map(item => item.message).join('\n')}>
+          <AlertTriangle className={`w-3 h-3 ${diagnostics.length ? 'text-amber-400' : 'text-slate-600'}`} />
+          <span>{diagnostics.length ? `${diagnostics.length} aviso(s)` : 'Sem erros'}</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1" role="status" aria-live="polite">
+          <Save className={`w-3 h-3 ${persistenceStatus === 'error' ? 'text-red-400' : 'text-slate-500'}`} />
+          <span>
+            {persistenceStatus === 'loading' ? 'Recuperando...'
+              : persistenceStatus === 'saving' ? 'Salvando...'
+              : persistenceStatus === 'recovered' ? 'Projeto recuperado'
+              : persistenceStatus === 'error' ? 'Falha no autosave'
+              : 'Salvo localmente'}
+          </span>
+        </div>
+
         {/* Help Tip */}
         <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
           <Terminal className="w-3 h-3" />

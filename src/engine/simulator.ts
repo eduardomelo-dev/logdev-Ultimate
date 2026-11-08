@@ -1,4 +1,4 @@
-import { BitVector, ComponentInstance, LogicValue, Wire } from '../types/circuit';
+import { BitVector, ComponentInstance, LogicValue, SimulationDiagnostic, Wire } from '../types/circuit';
 import { COMPONENT_METADATA } from './components';
 import { evaluateGate, resolveBus } from './logic';
 
@@ -21,6 +21,7 @@ export class Simulator {
   private netValues: Map<string, BitVector> = new Map();
   // Sequential states (e.g. flip flop previous clock state)
   private prevClockStates: Map<string, LogicValue> = new Map();
+  private diagnostics: SimulationDiagnostic[] = [];
   // Max propagation iterations before detecting oscillation
   private readonly MAX_ITERATIONS = 50;
 
@@ -97,6 +98,13 @@ export class Simulator {
     return netVal;
   }
 
+  public getDiagnostics(): SimulationDiagnostic[] {
+    return this.diagnostics.map(diagnostic => ({
+      ...diagnostic,
+      componentIds: [...diagnostic.componentIds],
+    }));
+  }
+
   public setPinValue(componentId: string, portId: string, value: BitVector) {
     const key = this.getPinKey(componentId, portId);
     this.pinValues.set(key, [...value]);
@@ -159,7 +167,9 @@ export class Simulator {
   public step(): boolean {
     let globalChanged = false;
     let iteration = 0;
+    const diagnostics = new Map<string, SimulationDiagnostic>();
 
+    this.netValues.clear();
     const nets = this.buildNets();
 
     while (iteration < this.MAX_ITERATIONS) {
@@ -353,11 +363,17 @@ export class Simulator {
 
         const isWidthMismatch = portWidths.some(w => w !== portWidths[0]);
         let resolved: BitVector;
+        const componentIds = [...new Set(net.map(pinKey => pinKey.split(':')[0]))];
 
         if (isWidthMismatch) {
           // Bus width mismatch produces error X on the net
           const maxWidth = Math.max(...portWidths);
           resolved = Array(maxWidth).fill('X');
+          diagnostics.set(net[0], {
+            type: 'width-mismatch',
+            message: `Larguras de barramento incompatíveis (${[...new Set(portWidths)].join(' e ')} bits).`,
+            componentIds,
+          });
         } else {
           // Gather all output pins driving this net
           const drivers: BitVector[] = [];
@@ -374,6 +390,13 @@ export class Simulator {
             }
           }
           resolved = resolveBus(drivers);
+          if (resolved.includes('X')) {
+            diagnostics.set(net[0], {
+              type: 'contention',
+              message: 'Sinal X detectado nesta conexão; verifique os drivers e a lógica conectada.',
+              componentIds,
+            });
+          }
         }
 
         // Store resolved net value for all connected ports
@@ -406,6 +429,15 @@ export class Simulator {
 
       iteration++;
     }
+
+    if (iteration >= this.MAX_ITERATIONS) {
+      diagnostics.set('oscillation', {
+        type: 'oscillation',
+        message: 'A simulação atingiu o limite de propagação; verifique ciclos combinacionais.',
+        componentIds: [...this.components.keys()],
+      });
+    }
+    this.diagnostics = [...diagnostics.values()];
 
     return globalChanged;
   }

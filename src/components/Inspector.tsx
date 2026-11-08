@@ -1,6 +1,7 @@
 import React from 'react';
-import { Settings, Trash2, Info, Compass, Layers, Hash, Type } from 'lucide-react';
+import { Settings, Trash2, Info, Compass, Layers, Hash, Type, RotateCw, AlertTriangle } from 'lucide-react';
 import { COMPONENT_METADATA } from '../engine/components';
+import { rotateDirection } from '../engine/componentGeometry';
 import { useCircuitStore } from '../store/circuitStore';
 import { Direction } from '../types/circuit';
 
@@ -19,12 +20,25 @@ export const Inspector: React.FC = () => {
 
   if (!selectedComp && !selectedWire) {
     return (
-      <aside className="w-64 bg-slate-900 border-l border-slate-800 p-4 flex flex-col h-[calc(100%-3.5rem)] text-xs text-slate-400 select-none">
+      <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs text-slate-400 select-none">
         <div className="flex items-center gap-2 text-slate-200 font-semibold mb-3 border-b border-slate-800 pb-2">
           <Info className="w-4 h-4 text-cyan-400" />
           <span>Informações do Circuito</span>
         </div>
         <div className="space-y-3">
+          {simulator.getDiagnostics().length > 0 && (
+            <section className="bg-red-950/30 p-3 rounded-lg border border-red-900/60 space-y-2" aria-label="Diagnósticos da simulação">
+              <div className="flex items-center gap-2 text-red-300 font-semibold">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Diagnósticos da simulação</span>
+              </div>
+              {simulator.getDiagnostics().map((diagnostic, index) => (
+                <p key={`${diagnostic.type}-${index}`} className="text-[11px] text-red-200/90">
+                  {diagnostic.message}
+                </p>
+              ))}
+            </section>
+          )}
           <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
             <div className="flex justify-between">
               <span>Total de Componentes:</span>
@@ -46,7 +60,7 @@ export const Inspector: React.FC = () => {
   if (selectedWire) {
     const val = simulator.getPinValue(selectedWire.from.componentId, selectedWire.from.portId);
     return (
-      <aside className="w-64 bg-slate-900 border-l border-slate-800 p-4 flex flex-col h-[calc(100%-3.5rem)] text-xs select-none">
+      <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs select-none">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2 text-slate-200 font-semibold">
             <Settings className="w-4 h-4 text-cyan-400" />
@@ -91,7 +105,7 @@ export const Inspector: React.FC = () => {
   const isBusComponent = ['PIN_INPUT', 'PIN_OUTPUT', 'REGISTER', 'CONSTANT'].includes(selectedComp.type);
 
   return (
-    <aside className="w-64 bg-slate-900 border-l border-slate-800 p-4 flex flex-col h-[calc(100%-3.5rem)] text-xs select-none">
+    <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col text-xs select-none">
       {/* Title */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <div className="flex items-center gap-2 text-slate-200 font-semibold">
@@ -107,7 +121,7 @@ export const Inspector: React.FC = () => {
         </button>
       </div>
 
-      <div className="space-y-4 overflow-y-auto pr-1">
+      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto pr-1">
         {/* Component Header Card */}
         <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
           <div className="font-semibold text-slate-200">{meta?.name || selectedComp.type}</div>
@@ -147,6 +161,7 @@ export const Inspector: React.FC = () => {
               ))}
             </select>
           </div>
+
         )}
 
         {/* Bit width (if Bus) */}
@@ -168,6 +183,7 @@ export const Inspector: React.FC = () => {
               ))}
             </select>
           </div>
+
         )}
 
         {/* Direction */}
@@ -187,6 +203,15 @@ export const Inspector: React.FC = () => {
             <option value="NORTH">Norte</option>
           </select>
         </div>
+
+        <button
+          onClick={() => updateComponent(selectedComp.id, { direction: rotateDirection(selectedComp.direction) })}
+          className="w-full flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 rounded px-2.5 py-2 text-slate-300 hover:text-cyan-300 hover:border-cyan-700 transition"
+          title="Girar componente 90° no sentido horário (R)"
+        >
+          <RotateCw className="w-4 h-4" />
+          <span>Girar 90° ({selectedComp.direction || 'EAST'})</span>
+        </button>
 
         {/* Coordinates */}
         <div className="pt-2 border-t border-slate-800 text-slate-500 flex justify-between font-mono text-[11px]">

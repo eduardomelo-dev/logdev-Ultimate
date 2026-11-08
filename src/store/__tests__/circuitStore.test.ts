@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCircuitStore } from '../circuitStore';
+import { getPortWorldPosition } from '../../engine/componentGeometry';
 
 describe('Circuit Store', () => {
   beforeEach(() => {
@@ -45,5 +46,31 @@ describe('Circuit Store', () => {
     store.togglePinValue(pin.id);
     const updated = useCircuitStore.getState().components.find(c => c.id === pin.id);
     expect(updated?.state?.value).toEqual(['1']);
+  });
+
+  it('rotates a connected component, keeps the wire attached, and undoes the rotation', () => {
+    const store = useCircuitStore.getState();
+    const pin = store.addComponent('PIN_INPUT', 0, 0);
+    const gate = store.addComponent('AND', 120, 0);
+    store.addWire(
+      { componentId: pin.id, portId: 'out' },
+      { componentId: gate.id, portId: 'in0' },
+      [{ x: 40, y: 20 }, { x: 120, y: 17 }]
+    );
+
+    useCircuitStore.getState().updateComponent(gate.id, { direction: 'SOUTH' });
+    const rotated = useCircuitStore.getState();
+    const rotatedGate = rotated.components.find(component => component.id === gate.id)!;
+    const rotatedWire = rotated.wires[0];
+    expect(rotatedGate.direction).toBe('SOUTH');
+    expect(rotatedWire.points[rotatedWire.points.length - 1])
+      .toEqual(getPortWorldPosition(rotatedGate, 'in0'));
+
+    rotated.undo();
+    const undone = useCircuitStore.getState();
+    const restoredGate = undone.components.find(component => component.id === gate.id)!;
+    expect(restoredGate.direction).toBe('EAST');
+    expect(undone.wires[0].points[undone.wires[0].points.length - 1])
+      .toEqual(getPortWorldPosition(restoredGate, 'in0'));
   });
 });

@@ -142,3 +142,9 @@ export interface CircuitState {
   components: ComponentInstance[];
   wires: Wire[];
 }
+
+export interface SimulationDiagnostic {
+  type: 'contention' | 'width-mismatch' | 'oscillation';
+  message: string;
+  componentIds: string[];
+}

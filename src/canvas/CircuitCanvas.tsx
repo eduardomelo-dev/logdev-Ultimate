@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { COMPONENT_METADATA } from '../engine/components';
+import { getPortWorldPosition, rotateDirection } from '../engine/componentGeometry';
 import { useCircuitStore } from '../store/circuitStore';
 import { Point, WireEndpoint } from '../types/circuit';
 import {
@@ -23,6 +24,7 @@ export const CircuitCanvas: React.FC = () => {
     zoom,
     pan,
     simulator,
+    isSimulating,
     setPan,
     setZoom,
     selectElement,
@@ -31,6 +33,8 @@ export const CircuitCanvas: React.FC = () => {
     addWire,
     togglePinValue,
     removeSelected,
+    undo,
+    redo,
   } = useCircuitStore();
 
   // Dragging state
@@ -68,9 +72,9 @@ export const CircuitCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animId: number;
+    let animId: number | undefined;
 
-    const render = () => {
+    const render = (timestamp: number) => {
       // Resize if needed
       if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
         canvas.width = canvas.clientWidth;
@@ -90,7 +94,19 @@ export const CircuitCanvas: React.FC = () => {
       for (const w of wires) {
         const val = simulator.getNetValue(w.from.componentId, w.from.portId);
         const isSelected = selectedIds.includes(w.id);
-        renderWire(ctx, w, val, isSelected);
+        const fromComponent = components.find(component => component.id === w.from.componentId);
+        const fromPort = fromComponent && COMPONENT_METADATA[fromComponent.type]
+          .getPorts(fromComponent.inputs, fromComponent.bitWidth)
+          .find(port => port.id === w.from.portId);
+        renderWire(
+          ctx,
+          w,
+          val,
+          isSelected,
+          timestamp / 35 % 16,
+          isSimulating,
+          fromPort?.type === 'in'
+        );
       }
 
       // Draw wire in-progress
@@ -112,13 +128,20 @@ export const CircuitCanvas: React.FC = () => {
 
       ctx.restore();
 
-      animId = requestAnimationFrame(render);
+      if (isSimulating || isPanning || draggedCompId !== null || activeWireStart !== null) {
+        animId = requestAnimationFrame(render);
+      }
     };
 
-    render();
+    render(0);
 
-    return () => cancelAnimationFrame(animId);
-  }, [components, wires, selectedIds, pan, zoom, activeWireStart, currentMousePos, simulator]);
+    return () => {
+      if (animId !== undefined) cancelAnimationFrame(animId);
+    };
+  }, [
+    components, wires, selectedIds, pan, zoom, activeWireStart, currentMousePos,
+    simulator, isSimulating, isPanning, draggedCompId,
+  ]);
 
   // Mouse Wheel (Zoom)
   const handleWheel = (e: React.WheelEvent) => {
@@ -169,6 +192,7 @@ export const CircuitCanvas: React.FC = () => {
               endpoint: { componentId: c.id, portId: hitPort.id },
               startPoint: { x: portWorldX, y: portWorldY },
             });
+            setCurrentMousePos(world);
             return;
           } else {
             // Complete wire if connecting to a different component/port
@@ -230,7 +254,7 @@ export const CircuitCanvas: React.FC = () => {
     const screenY = e.clientY - rect.top;
     const world = screenToWorld(screenX, screenY);
 
-    setCurrentMousePos(world);
+    if (activeWireStart) setCurrentMousePos(world);
 
     if (isPanning) {
       setPan({
@@ -260,16 +284,11 @@ export const CircuitCanvas: React.FC = () => {
           const toComp = components.find(c => c.id === w.to.componentId);
           if (!fromComp || !toComp) continue;
 
-          const fromPort = COMPONENT_METADATA[fromComp.type]?.getPorts(fromComp.inputs, fromComp.bitWidth).find(p => p.id === w.from.portId);
-          const toPort = COMPONENT_METADATA[toComp.type]?.getPorts(toComp.inputs, toComp.bitWidth).find(p => p.id === w.to.portId);
-          if (!fromPort || !toPort) continue;
+          const from = getPortWorldPosition(fromComp, w.from.portId);
+          const to = getPortWorldPosition(toComp, w.to.portId);
+          if (!from || !to) continue;
 
-          const fromX = fromComp.x + fromPort.relX;
-          const fromY = fromComp.y + fromPort.relY;
-          const toX = toComp.x + toPort.relX;
-          const toY = toComp.y + toPort.relY;
-
-          w.points = routeOrthogonalWire({ x: fromX, y: fromY }, { x: toX, y: toY });
+          w.points = routeOrthogonalWire(from, to);
         }
       }
     }
@@ -292,6 +311,30 @@ export const CircuitCanvas: React.FC = () => {
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (target instanceof HTMLElement
+        && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (e.key.toLowerCase() === 'r') {
+        const selectedComponent = components.find(component => selectedIds.includes(component.id));
+        if (selectedComponent) {
+          updateComponent(selectedComponent.id, {
+            direction: rotateDirection(selectedComponent.direction),
+          });
+        }
+        return;
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         removeSelected();
       } else if (e.key === 'Escape') {
@@ -301,7 +344,7 @@ export const CircuitCanvas: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [removeSelected, clearSelection]);
+  }, [removeSelected, clearSelection, undo, redo, components, selectedIds, updateComponent]);
 
   return (
     <div className="relative w-full h-full overflow-hidden select-none bg-slate-900">
@@ -316,4 +359,3 @@ export const CircuitCanvas: React.FC = () => {
     </div>
   );
 };
-

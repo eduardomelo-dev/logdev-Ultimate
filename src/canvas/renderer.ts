@@ -1,4 +1,5 @@
 import { COMPONENT_METADATA } from '../engine/components';
+import { getComponentDimensions, getOrientedPort, getRotationAngle } from '../engine/componentGeometry';
 import { BitVector, ComponentInstance, LogicValue, Point, Port, Wire } from '../types/circuit';
 
 export const GRID_SIZE = 20;
@@ -42,7 +43,10 @@ export function renderWire(
   ctx: CanvasRenderingContext2D,
   wire: Wire,
   value: BitVector | undefined,
-  isSelected: boolean
+  isSelected: boolean,
+  animationOffset = 0,
+  animateSignal = false,
+  flowReversed = false
 ) {
   if (!wire.points || wire.points.length < 2) return;
 
@@ -70,6 +74,21 @@ export function renderWire(
 
   ctx.stroke();
 
+  if (animateSignal && bitVal === '1' && !isSelected) {
+    ctx.beginPath();
+    ctx.moveTo(wire.points[0].x, wire.points[0].y);
+    for (let i = 1; i < wire.points.length; i++) {
+      ctx.lineTo(wire.points[i].x, wire.points[i].y);
+    }
+    ctx.strokeStyle = '#bbf7d0';
+    ctx.lineWidth = Math.max(1, lineWidth * 0.55);
+    ctx.setLineDash([3, 13]);
+    ctx.lineDashOffset = flowReversed ? animationOffset : -animationOffset;
+    ctx.shadowColor = '#22c55e';
+    ctx.shadowBlur = 4;
+    ctx.stroke();
+  }
+
   // Draw dots at junctions
   for (const p of wire.points) {
     ctx.beginPath();
@@ -89,9 +108,12 @@ export function renderComponent(
 ) {
   const meta = COMPONENT_METADATA[comp.type];
   if (!meta) return;
+  const dimensions = getComponentDimensions(comp);
 
   ctx.save();
-  ctx.translate(comp.x, comp.y);
+  ctx.translate(comp.x + dimensions.width / 2, comp.y + dimensions.height / 2);
+  ctx.rotate(getRotationAngle(comp.direction));
+  ctx.translate(-meta.width / 2, -meta.height / 2);
 
   // Selection outline
   if (isSelected) {
@@ -374,11 +396,12 @@ export function hitTestComponent(
 ): boolean {
   const meta = COMPONENT_METADATA[comp.type];
   if (!meta) return false;
+  const dimensions = getComponentDimensions(comp);
   return (
     worldPoint.x >= comp.x &&
-    worldPoint.x <= comp.x + meta.width &&
+    worldPoint.x <= comp.x + dimensions.width &&
     worldPoint.y >= comp.y &&
-    worldPoint.y <= comp.y + meta.height
+    worldPoint.y <= comp.y + dimensions.height
   );
 }
 
@@ -390,7 +413,9 @@ export function hitTestPort(
   const meta = COMPONENT_METADATA[comp.type];
   if (!meta) return null;
 
-  const ports = meta.getPorts(comp.inputs, comp.bitWidth);
+  const ports = meta.getPorts(comp.inputs, comp.bitWidth)
+    .map(port => getOrientedPort(comp, port.id))
+    .filter((port): port is Port => port !== undefined);
   for (const p of ports) {
     const px = comp.x + p.relX;
     const py = comp.y + p.relY;

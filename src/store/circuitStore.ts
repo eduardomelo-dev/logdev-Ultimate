@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { COMPONENT_METADATA } from '../engine/components';
+import { getComponentDimensions, getPortWorldPosition } from '../engine/componentGeometry';
 import { Simulator } from '../engine/simulator';
+import { routeOrthogonalWire } from '../canvas/wireRouter';
 import {
   BitVector,
   CircuitState,
@@ -158,16 +160,35 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
     },
 
     updateComponent: (id: string, updates: Partial<ComponentInstance>) => {
-      const nextComponents = get().components.map(c => {
-        if (c.id === id) {
-          const updated = { ...c, ...updates };
-          return updated;
-        }
-        return c;
-      });
-      set({ components: nextComponents });
-      syncSimulator(nextComponents, get().wires);
-      pushHistory(nextComponents, get().wires);
+      const { components, wires } = get();
+      const current = components.find(component => component.id === id);
+      if (!current) return;
+
+      const updated = { ...current, ...updates };
+      if (updates.direction && updates.direction !== current.direction) {
+        const oldSize = getComponentDimensions(current);
+        const newSize = getComponentDimensions(updated);
+        updated.x += (oldSize.width - newSize.width) / 2;
+        updated.y += (oldSize.height - newSize.height) / 2;
+      }
+
+      const nextComponents = components.map(component => component.id === id ? updated : component);
+      const nextWires = updates.direction && updates.direction !== current.direction
+        ? wires.map(wire => {
+            if (wire.from.componentId !== id && wire.to.componentId !== id) return wire;
+            const fromComponent = nextComponents.find(component => component.id === wire.from.componentId);
+            const toComponent = nextComponents.find(component => component.id === wire.to.componentId);
+            const from = fromComponent && getPortWorldPosition(fromComponent, wire.from.portId);
+            const to = toComponent && getPortWorldPosition(toComponent, wire.to.portId);
+            return from && to
+              ? { ...wire, points: routeOrthogonalWire(from, to) }
+              : wire;
+          })
+        : wires;
+
+      set({ components: nextComponents, wires: nextWires });
+      syncSimulator(nextComponents, nextWires);
+      pushHistory(nextComponents, nextWires);
     },
 
     selectElement: (id: string, multi = false) => {

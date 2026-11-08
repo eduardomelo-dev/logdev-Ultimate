@@ -81,6 +81,7 @@ describe('Simulator Engine', () => {
     sim.setCircuit([pinA, pinB], [wire]);
     sim.step();
     expect(sim.getNetValue('pinA', 'out')).toEqual(['X']);
+    expect(sim.getDiagnostics().some(diagnostic => diagnostic.type === 'contention')).toBe(true);
   });
 
   it('detects bus width mismatch and flags error X', () => {
@@ -98,6 +99,7 @@ describe('Simulator Engine', () => {
     sim.step();
     expect(sim.getNetValue('pin1', 'out')).toEqual(['X']);
     expect(sim.getPinValue('pin4', 'in')).toEqual(['X', 'X', 'X', 'X']);
+    expect(sim.getDiagnostics().some(diagnostic => diagnostic.type === 'width-mismatch')).toBe(true);
   });
 
   it('simulates Splitter component correctly', () => {
