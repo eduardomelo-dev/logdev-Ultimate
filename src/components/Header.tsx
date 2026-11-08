@@ -5,22 +5,16 @@ import {
   StepForward,
   Hand,
   MousePointer,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
   Trash2,
   Download,
   Upload,
-  Undo2,
-  Redo2,
-  Sparkles,
   ChevronDown,
   FileText,
   Image as ImageIcon,
   Code2,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
-import { clockCounterDemo, fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
+import { LogdevLogo } from './LogdevLogo';
 import { exportToJpeg, exportToPdf } from '../utils/exportUtils';
 
 export const Header: React.FC = () => {
@@ -32,14 +26,7 @@ export const Header: React.FC = () => {
     stepSimulation,
     clockFrequency,
     setClockFrequency,
-    zoom,
-    setZoom,
-    setPan,
     resetCircuit,
-    undo,
-    redo,
-    historyIndex,
-    history,
     components,
     wires,
     loadCircuit,
@@ -47,7 +34,6 @@ export const Header: React.FC = () => {
   } = useCircuitStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [showDemos, setShowDemos] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExportJson = () => {
@@ -102,17 +88,12 @@ export const Header: React.FC = () => {
     e.target.value = '';
   };
 
-  const handleLoadDemo = (demo: any) => {
-    loadCircuit(demo);
-    setShowDemos(false);
-  };
-
   return (
     <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-md">
       {/* Brand & System Logo */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-600 to-emerald-500 p-0.5 shadow-lg shadow-cyan-950/50 flex items-center justify-center">
-          <img src="/icon.svg" alt="logdev" className="w-full h-full rounded-[10px] object-contain drop-shadow" />
+          <LogdevLogo size={9} className="w-full h-full rounded-[10px] object-contain drop-shadow" />
         </div>
         <div>
           <div className="flex items-center gap-1.5">
@@ -198,183 +179,88 @@ export const Header: React.FC = () => {
           </select>
         </div>
 
-        <div className="w-px h-5 bg-slate-800 mx-1" />
-
-        {/* Undo / Redo */}
-        <button
-          onClick={undo}
-          disabled={historyIndex <= 0}
-          title="Desfazer (Ctrl+Z)"
-          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent"
-        >
-          <Undo2 className="w-4 h-4" />
-        </button>
-        <button
-          onClick={redo}
-          disabled={historyIndex >= history.length - 1}
-          title="Refazer (Ctrl+Y)"
-          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent"
-        >
-          <Redo2 className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Right Actions */}
-      <div className="flex items-center gap-2">
-        {/* Zoom */}
-        <div className="flex items-center bg-slate-950/60 rounded-lg border border-slate-800 px-1">
+        {/* Right Actions */}
+        <div className="flex items-center gap-2">
+          {/* Import */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImport}
+            accept=".json"
+            className="hidden"
+          />
           <button
-            onClick={() => setZoom((z) => Math.max(0.3, z * 0.85))}
-            className="p-1.5 text-slate-400 hover:text-slate-200 transition"
-            title="Reduzir Zoom"
+            onClick={() => fileInputRef.current?.click()}
+            title="Importar Arquivo JSON"
+            className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
           >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-mono text-slate-300 w-11 text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            onClick={() => setZoom((z) => Math.min(2.5, z * 1.15))}
-            className="p-1.5 text-slate-400 hover:text-slate-200 transition"
-            title="Aumentar Zoom"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              setZoom(1);
-              setPan({ x: 0, y: 0 });
-            }}
-            className="p-1.5 text-slate-400 hover:text-slate-200 transition ml-1"
-            title="Centralizar e Resetar Zoom"
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Demos Menu */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowDemos(!showDemos);
-              setShowExportMenu(false);
-            }}
-            title="Carregar Circuitos de Exemplo"
-            className="p-2 text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/50 rounded-lg transition text-xs flex items-center gap-1.5 border border-cyan-800/60"
-          >
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="hidden md:inline">Exemplos</span>
-            <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
+            <Upload className="w-4 h-4" />
+            <span className="hidden md:inline">Importar</span>
           </button>
 
-          {showDemos && (
-            <div className="absolute right-0 top-11 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
-              <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
-                Circuitos Prontos
+          {/* Export Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowExportMenu(!showExportMenu);
+              }}
+              title="Exportar Circuito (PDF, JPEG, JSON)"
+              className="p-2 text-slate-200 hover:text-white bg-gradient-to-r from-slate-800 to-slate-800/90 hover:from-slate-700 hover:to-slate-700/90 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
+            >
+              <Download className="w-4 h-4 text-cyan-400" />
+              <span className="hidden md:inline">Exportar</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 top-11 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
+                <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
+                  Opções de Exportação
+                </div>
+                <button
+                  onClick={handleExportPdf}
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                >
+                  <FileText className="w-4 h-4 text-red-400" />
+                  <div>
+                    <div className="font-medium">Exportar PDF</div>
+                    <div className="text-[10px] text-slate-400">Diagrama em folha A4</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleExportJpeg}
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                >
+                  <ImageIcon className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <div className="font-medium">Exportar JPEG</div>
+                    <div className="text-[10px] text-slate-400">Imagem de alta definição</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleExportJson}
+                  className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+                >
+                  <Code2 className="w-4 h-4 text-cyan-400" />
+                  <div>
+                    <div className="font-medium">Exportar JSON</div>
+                    <div className="text-[10px] text-slate-400">Arquivo de projeto nativo</div>
+                  </div>
+                </button>
               </div>
-              <button
-                onClick={() => handleLoadDemo(fullAdderDemo)}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
-              >
-                Somador Completo (Full Adder)
-              </button>
-              <button
-                onClick={() => handleLoadDemo(srLatchDemo)}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
-              >
-                Latch SR (Memória Básica)
-              </button>
-              <button
-                onClick={() => handleLoadDemo(clockCounterDemo)}
-                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 transition"
-              >
-                Contador Binário com Clock
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Import */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImport}
-          accept=".json"
-          className="hidden"
-        />
-
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          title="Importar Arquivo JSON"
-          className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
-        >
-          <Upload className="w-4 h-4" />
-          <span className="hidden md:inline">Importar</span>
-        </button>
-
-        {/* Export Dropdown Menu (JSON, PDF, JPEG) */}
-        <div className="relative">
+          {/* Clear Canvas */}
           <button
-            onClick={() => {
-              setShowExportMenu(!showExportMenu);
-              setShowDemos(false);
-            }}
-            title="Exportar Circuito (PDF, JPEG, JSON)"
-            className="p-2 text-slate-200 hover:text-white bg-gradient-to-r from-slate-800 to-slate-800/90 hover:from-slate-700 hover:to-slate-700/90 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
+            onClick={resetCircuit}
+            title="Limpar Área de Trabalho"
+            className="p-2 text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 rounded-lg transition text-xs flex items-center gap-1.5 border border-red-900/50"
           >
-            <Download className="w-4 h-4 text-cyan-400" />
-            <span className="hidden md:inline">Exportar</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden md:inline">Limpar</span>
           </button>
-
-          {showExportMenu && (
-            <div className="absolute right-0 top-11 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
-              <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
-                Opções de Exportação
-              </div>
-              <button
-                onClick={handleExportPdf}
-                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
-              >
-                <FileText className="w-4 h-4 text-red-400" />
-                <div>
-                  <div className="font-medium">Exportar PDF</div>
-                  <div className="text-[10px] text-slate-400">Diagrama em folha A4</div>
-                </div>
-              </button>
-              <button
-                onClick={handleExportJpeg}
-                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
-              >
-                <ImageIcon className="w-4 h-4 text-emerald-400" />
-                <div>
-                  <div className="font-medium">Exportar JPEG</div>
-                  <div className="text-[10px] text-slate-400">Imagem de alta definição</div>
-                </div>
-              </button>
-              <button
-                onClick={handleExportJson}
-                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
-              >
-                <Code2 className="w-4 h-4 text-cyan-400" />
-                <div>
-                  <div className="font-medium">Exportar JSON</div>
-                  <div className="text-[10px] text-slate-400">Arquivo de projeto nativo</div>
-                </div>
-              </button>
-            </div>
-          )}
         </div>
-
-        {/* Clear Canvas */}
-        <button
-          onClick={resetCircuit}
-          title="Limpar Área de Trabalho"
-          className="p-2 text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 rounded-lg transition text-xs flex items-center gap-1.5 border border-red-900/50"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span className="hidden md:inline">Limpar</span>
-        </button>
       </div>
     </header>
   );
