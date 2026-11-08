@@ -32,7 +32,10 @@ function isComponentInstance(value: unknown): value is ComponentInstance {
         && Number.isInteger(value.bitWidth) && value.bitWidth >= 1 && value.bitWidth <= 32))
     && (value.inputs === undefined
       || (typeof value.inputs === 'number'
-        && Number.isInteger(value.inputs) && value.inputs >= 2 && value.inputs <= 8))
+        && Number.isInteger(value.inputs)
+        && ((value.type === 'RAM' || value.type === 'ROM')
+          ? value.inputs >= 1 && value.inputs <= 5
+          : value.inputs >= 2 && value.inputs <= 8)))
     && validState
     && validSubcircuit;
 }

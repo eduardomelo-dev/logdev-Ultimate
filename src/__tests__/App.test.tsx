@@ -18,6 +18,18 @@ describe('App Layout', () => {
     expect(screen.getByText(/Portas Lógicas/i)).toBeDefined();
   });
 
+  it('guides a new user through the first circuit and makes connect mode explicit', () => {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Comece um circuito' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar uma entrada/i }));
+    expect(useCircuitStore.getState().pendingComponentType).toBe('PIN_INPUT');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+    expect(useCircuitStore.getState().tool).toBe('wire');
+    expect(screen.getByText('Conectar portas')).toBeInTheDocument();
+  });
+
   it('opens the combinational analysis and displays its truth table and expression', () => {
     useCircuitStore.getState().loadCircuit({
       components: [
@@ -128,6 +140,25 @@ describe('App Layout', () => {
 
     expect(useCircuitStore.getState().components).toMatchObject([
       { type: 'ADDER', bitWidth: 4 },
+    ]);
+  });
+
+  it('edits ROM words in the component inspector', () => {
+    useCircuitStore.getState().addComponent('ROM', 0, 0);
+    render(<App />);
+
+    const memoryEditor = screen.getByRole('textbox', { name: /Conteúdo da ROM/i });
+    fireEvent.change(memoryEditor, {
+      target: { value: '00000001\n00000010\n00000011\n00000100' },
+    });
+    fireEvent.blur(memoryEditor);
+
+    const rom = useCircuitStore.getState().components.find(component => component.type === 'ROM');
+    expect(rom?.state?.memory).toEqual([
+      ['1', '0', '0', '0', '0', '0', '0', '0'],
+      ['0', '1', '0', '0', '0', '0', '0', '0'],
+      ['1', '1', '0', '0', '0', '0', '0', '0'],
+      ['0', '0', '1', '0', '0', '0', '0', '0'],
     ]);
   });
 

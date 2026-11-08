@@ -42,7 +42,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ persistenceStatus }) => {
         <div className="flex items-center gap-1">
           <span>Modo:</span>
           <span className="text-slate-300 font-medium uppercase tracking-wider text-[10px]">
-            {tool === 'poke' ? 'Poke (Interativo)' : 'Selecionar / Conectar'}
+            {tool === 'poke' ? 'Interagir' : tool === 'wire' ? 'Conectar portas' : 'Selecionar e conectar'}
           </span>
         </div>
 

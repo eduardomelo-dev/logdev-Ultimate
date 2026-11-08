@@ -52,7 +52,7 @@ export class Simulator {
     const validKeys = new Set<string>();
     const validSequentialIds = new Set(
       components
-        .filter(component => component.type === 'D_FLIP_FLOP' || component.type === 'REGISTER')
+        .filter(component => ['D_FLIP_FLOP', 'REGISTER', 'RAM'].includes(component.type))
         .map(component => component.id)
     );
 
@@ -148,6 +148,11 @@ export class Simulator {
       ...diagnostic,
       componentIds: [...diagnostic.componentIds],
     }));
+  }
+
+  public getComponentState(componentId: string): ComponentInstance['state'] | undefined {
+    const state = this.components.get(componentId)?.state;
+    return state ? JSON.parse(JSON.stringify(state)) : undefined;
   }
 
   public setPinValue(componentId: string, portId: string, value: BitVector) {
@@ -523,6 +528,46 @@ export class Simulator {
 
             if (!this.areVectorsEqual(stored, this.getPinValue(id, 'q'))) {
               this.pinValues.set(this.getPinKey(id, 'q'), stored);
+              iterationChanged = true;
+            }
+            break;
+          }
+
+          case 'RAM':
+          case 'ROM': {
+            const addressBits = Math.max(1, Math.min(5, Math.floor(comp.inputs ?? 2)));
+            const bitWidth = Math.max(1, Math.min(32, Math.floor(comp.bitWidth ?? 8)));
+            const cellCount = 2 ** addressBits;
+            const memory: BitVector[] = Array.from({ length: cellCount }, (_, address) =>
+              this.normalizeVector(comp.state?.memory?.[address], bitWidth, '0')
+            );
+            if (!comp.state) comp.state = {};
+            comp.state.memory = memory;
+
+            const addressVector = this.getPinValue(id, 'addr');
+            const address = this.decodeSelector(addressVector, cellCount);
+            let dataOut: BitVector;
+            if (address === null || address >= cellCount) {
+              dataOut = Array(bitWidth).fill('X');
+            } else {
+              dataOut = [...memory[address]];
+            }
+
+            if (comp.type === 'RAM') {
+              const clk = this.getPinValue(id, 'clk')[0] ?? 'Z';
+              const prevClk = this.prevClockStates.get(id) ?? '0';
+              const writeEnable = this.getPinValue(id, 'writeEnable')[0] ?? 'Z';
+              if (prevClk === '0' && clk === '1' && writeEnable === '1'
+                && address !== null && address < cellCount) {
+                memory[address] = this.normalizeVector(this.getPinValue(id, 'dataIn'), bitWidth, 'X');
+                comp.state.memory = memory;
+                dataOut = [...memory[address]];
+              }
+              this.prevClockStates.set(id, clk);
+            }
+
+            if (!this.areVectorsEqual(dataOut, this.getPinValue(id, 'dataOut'))) {
+              this.pinValues.set(this.getPinKey(id, 'dataOut'), dataOut);
               iterationChanged = true;
             }
             break;

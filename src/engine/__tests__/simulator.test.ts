@@ -745,4 +745,109 @@ describe('Simulator Engine', () => {
     sim.step();
     expect(sim.getPinValue(partialBusOutput.id, 'in')).toEqual(['Z', '0', 'Z', 'Z']);
   });
+
+  it('writes RAM on a rising clock edge and preserves the memory state', () => {
+    const sim = new Simulator();
+    const address: ComponentInstance = {
+      id: 'address',
+      type: 'PIN_INPUT',
+      x: 0,
+      y: 0,
+      bitWidth: 2,
+      state: { value: ['1', '0'] },
+    };
+    const data: ComponentInstance = {
+      id: 'data',
+      type: 'PIN_INPUT',
+      x: 0,
+      y: 40,
+      bitWidth: 8,
+      state: { value: ['1', '0', '1', '0', '0', '1', '0', '1'] },
+    };
+    const writeEnable: ComponentInstance = {
+      id: 'write-enable',
+      type: 'PIN_INPUT',
+      x: 0,
+      y: 80,
+      state: { value: ['1'] },
+    };
+    const clock: ComponentInstance = {
+      id: 'clock',
+      type: 'PIN_INPUT',
+      x: 0,
+      y: 120,
+      state: { value: ['0'] },
+    };
+    const ram: ComponentInstance = {
+      id: 'ram',
+      type: 'RAM',
+      x: 120,
+      y: 0,
+      inputs: 2,
+      bitWidth: 8,
+      state: { memory: Array.from({ length: 4 }, () => Array(8).fill('0')) },
+    };
+    const wires: Wire[] = [
+      { id: 'address-ram', from: { componentId: 'address', portId: 'out' }, to: { componentId: 'ram', portId: 'addr' }, points: [] },
+      { id: 'data-ram', from: { componentId: 'data', portId: 'out' }, to: { componentId: 'ram', portId: 'dataIn' }, points: [] },
+      { id: 'enable-ram', from: { componentId: 'write-enable', portId: 'out' }, to: { componentId: 'ram', portId: 'writeEnable' }, points: [] },
+      { id: 'clock-ram', from: { componentId: 'clock', portId: 'out' }, to: { componentId: 'ram', portId: 'clk' }, points: [] },
+    ];
+
+    sim.setCircuit([address, data, writeEnable, clock, ram], wires);
+    sim.step();
+    expect(sim.getPinValue('ram', 'dataOut')).toEqual(Array(8).fill('0'));
+
+    sim.setPinValue('clock', 'out', ['1']);
+    sim.step();
+    expect(sim.getPinValue('ram', 'dataOut')).toEqual(['1', '0', '1', '0', '0', '1', '0', '1']);
+    expect(sim.getComponentState('ram')?.memory?.[1]).toEqual(['1', '0', '1', '0', '0', '1', '0', '1']);
+
+    sim.setPinValue('clock', 'out', ['0']);
+    sim.step();
+    sim.setPinValue('clock', 'out', ['1']);
+    sim.step();
+    expect(sim.getComponentState('ram')?.memory?.[1]).toEqual(['1', '0', '1', '0', '0', '1', '0', '1']);
+  });
+
+  it('reads configurable ROM contents and returns X for an unknown address', () => {
+    const sim = new Simulator();
+    const address: ComponentInstance = {
+      id: 'rom-address',
+      type: 'PIN_INPUT',
+      x: 0,
+      y: 0,
+      bitWidth: 2,
+      state: { value: ['0', '1'] },
+    };
+    const rom: ComponentInstance = {
+      id: 'rom',
+      type: 'ROM',
+      x: 100,
+      y: 0,
+      inputs: 2,
+      bitWidth: 4,
+      state: {
+        memory: [
+          ['0', '0', '0', '0'],
+          ['1', '0', '1', '0'],
+          ['0', '1', '0', '1'],
+          ['1', '1', '1', '1'],
+        ],
+      },
+    };
+
+    sim.setCircuit([address, rom], [{
+      id: 'address-rom',
+      from: { componentId: address.id, portId: 'out' },
+      to: { componentId: rom.id, portId: 'addr' },
+      points: [],
+    }]);
+    sim.step();
+    expect(sim.getPinValue('rom', 'dataOut')).toEqual(['0', '1', '0', '1']);
+
+    sim.setPinValue(address.id, 'out', ['X', '0']);
+    sim.step();
+    expect(sim.getPinValue('rom', 'dataOut')).toEqual(['X', 'X', 'X', 'X']);
+  });
 });

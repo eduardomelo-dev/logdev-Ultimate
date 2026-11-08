@@ -21,6 +21,23 @@ describe('Circuit autosave data', () => {
     expect(parseCircuitData(circuit)).toEqual(circuit);
   });
 
+  it('round-trips ROM contents and accepts a one-bit memory address width', () => {
+    const memoryCircuit: CircuitState = {
+      components: [{
+        id: 'rom',
+        type: 'ROM',
+        x: 0,
+        y: 0,
+        inputs: 1,
+        bitWidth: 2,
+        state: { memory: [['1', '0'], ['0', '1']] },
+      }],
+      wires: [],
+    };
+
+    expect(parseCircuitData(JSON.parse(serializeCircuitData(memoryCircuit)))).toEqual(memoryCircuit);
+  });
+
   it('rejects invalid endpoints and duplicate component IDs', () => {
     expect(() => parseCircuitData({
       components: [{ id: 'input', type: 'PIN_INPUT', x: 0, y: 0 }],

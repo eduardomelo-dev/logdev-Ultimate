@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Settings, Trash2, Info, Compass, Layers, Hash, Type, RotateCw, AlertTriangle } from 'lucide-react';
 import { COMPONENT_METADATA } from '../engine/components';
 import { rotateDirection } from '../engine/componentGeometry';
@@ -17,6 +17,24 @@ export const Inspector: React.FC = () => {
 
   const selectedComp = components.find((c) => selectedIds.includes(c.id));
   const selectedWire = wires.find((w) => selectedIds.includes(w.id));
+  const [romDraft, setRomDraft] = useState('');
+  const [romError, setRomError] = useState('');
+
+  useEffect(() => {
+    if (selectedComp?.type !== 'ROM') {
+      setRomDraft('');
+      setRomError('');
+      return;
+    }
+
+    const wordWidth = selectedComp.bitWidth ?? 8;
+    const wordCount = 2 ** (selectedComp.inputs ?? 2);
+    setRomDraft(Array.from({ length: wordCount }, (_, address) => {
+      const word = selectedComp.state?.memory?.[address] ?? Array(wordWidth).fill('0');
+      return [...word].reverse().join('');
+    }).join('\n'));
+    setRomError('');
+  }, [selectedComp?.id, selectedComp?.type, selectedComp?.inputs, selectedComp?.bitWidth]);
 
   if (!selectedComp && !selectedWire) {
     return (
@@ -103,9 +121,10 @@ export const Inspector: React.FC = () => {
   const meta = COMPONENT_METADATA[selectedComp.type];
   const isGateWithInputs = ['AND', 'OR', 'NAND', 'NOR', 'XOR', 'XNOR'].includes(selectedComp.type);
   const isConfigurablePlexer = selectedComp.type === 'MULTIPLEXER' || selectedComp.type === 'DEMULTIPLEXER';
+  const isMemory = selectedComp.type === 'RAM' || selectedComp.type === 'ROM';
   const isConfigurableWidthComponent = [
     'PIN_INPUT', 'PIN_OUTPUT', 'REGISTER', 'CONSTANT', 'ADDER', 'SPLITTER',
-    'DECODER', 'PRIORITY_ENCODER', 'MULTIPLEXER', 'DEMULTIPLEXER',
+    'DECODER', 'PRIORITY_ENCODER', 'MULTIPLEXER', 'DEMULTIPLEXER', 'RAM', 'ROM',
   ].includes(selectedComp.type);
 
   return (
@@ -147,20 +166,24 @@ export const Inspector: React.FC = () => {
         </div>
 
         {/* Number of inputs (if Gate) */}
-        {(isGateWithInputs || isConfigurablePlexer) && (
+        {(isGateWithInputs || isConfigurablePlexer || isMemory) && (
           <div>
             <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
               <Hash className="w-3.5 h-3.5 text-slate-400" />
-              <span>{selectedComp.type === 'DEMULTIPLEXER' ? 'Número de Saídas' : 'Número de Entradas'}</span>
+              <span>
+                {isMemory
+                  ? 'Bits de Endereço'
+                  : selectedComp.type === 'DEMULTIPLEXER' ? 'Número de Saídas' : 'Número de Entradas'}
+              </span>
             </label>
             <select
               value={selectedComp.inputs || 2}
               onChange={(e) => updateComponent(selectedComp.id, { inputs: Number(e.target.value) })}
               className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
             >
-              {(isConfigurablePlexer ? [2, 4, 8] : [2, 3, 4, 5, 6, 8]).map((n) => (
+              {(isMemory ? [1, 2, 3, 4, 5] : isConfigurablePlexer ? [2, 4, 8] : [2, 3, 4, 5, 6, 8]).map((n) => (
                 <option key={n} value={n}>
-                  {n} entradas
+                  {isMemory ? `${n} bit(s) (${2 ** n} posições)` : `${n} entradas`}
                 </option>
               ))}
             </select>
@@ -178,6 +201,8 @@ export const Inspector: React.FC = () => {
                   ? 'Bits de Endereço'
                   : selectedComp.type === 'PRIORITY_ENCODER'
                     ? 'Linhas de Entrada'
+                    : isMemory
+                      ? 'Largura dos Dados'
                     : isConfigurablePlexer
                       ? 'Largura dos Dados'
                     : selectedComp.type === 'SPLITTER'
@@ -205,6 +230,51 @@ export const Inspector: React.FC = () => {
             </select>
           </div>
 
+        )}
+
+        {selectedComp.type === 'ROM' && (
+          <div>
+            <label className="text-slate-400 font-medium mb-1 block" htmlFor="rom-memory">
+              Conteúdo da ROM (binário, MSB primeiro)
+            </label>
+            <textarea
+              id="rom-memory"
+              value={romDraft}
+              onChange={(event) => {
+                setRomDraft(event.target.value);
+                setRomError('');
+              }}
+              onBlur={() => {
+                const words = romDraft.trim().split(/\s+/);
+                const wordWidth = selectedComp.bitWidth ?? 8;
+                const wordCount = 2 ** (selectedComp.inputs ?? 2);
+                if (words.length !== wordCount
+                  || words.some(word => word.length !== wordWidth || !/^[01XZ]+$/i.test(word))) {
+                  setRomError(`Informe ${wordCount} palavras de ${wordWidth} bits (0, 1, X ou Z).`);
+                  return;
+                }
+
+                updateComponent(selectedComp.id, {
+                  state: {
+                    ...selectedComp.state,
+                    memory: words.map(word => [...word.toUpperCase()].reverse()),
+                  },
+                });
+                setRomError('');
+              }}
+              rows={Math.min(8, 2 ** (selectedComp.inputs ?? 2))}
+              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 font-mono text-slate-200 focus:outline-none focus:border-slate-500"
+              aria-describedby={romError ? 'rom-memory-error' : undefined}
+            />
+            {romError && (
+              <p id="rom-memory-error" role="alert" className="mt-1 text-[10px] text-red-400">
+                {romError}
+              </p>
+            )}
+            <p className="mt-1 text-[10px] text-slate-500">
+              Uma palavra por endereço, começando no 0. Saia do campo para aplicar.
+            </p>
+          </div>
         )}
 
         {/* Direction */}

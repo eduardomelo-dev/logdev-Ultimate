@@ -54,6 +54,8 @@ export type ComponentType =
   | 'PRIORITY_ENCODER'
   | 'D_FLIP_FLOP'
   | 'REGISTER'
+  | 'RAM'
+  | 'ROM'
   | 'BUTTON'
   | 'SWITCH'
   | 'LED'

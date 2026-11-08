@@ -60,6 +60,9 @@ export const Sidebar: React.FC = () => {
     <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-r border-slate-800 flex flex-col z-10 select-none">
       {/* Search Bar */}
       <div className="shrink-0 p-3 border-b border-slate-800">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          Biblioteca de componentes
+        </div>
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
@@ -71,6 +74,9 @@ export const Sidebar: React.FC = () => {
             className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500 transition"
           />
         </div>
+        <p className="mt-1.5 px-1 text-[10px] text-slate-500">
+          Abra uma categoria e clique no componente para posicioná-lo.
+        </p>
       </div>
 
       {/* Component Library List */}

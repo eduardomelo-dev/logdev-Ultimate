@@ -132,6 +132,7 @@ interface CircuitStoreState {
 const MAX_HISTORY = 30;
 const MAX_SIGNAL_HISTORY = 300;
 const MAX_TRACED_SIGNALS = 8;
+const STATEFUL_COMPONENT_TYPES = new Set(['D_FLIP_FLOP', 'REGISTER', 'RAM']);
 
 export function getSignalTraceKey(signal: WireEndpoint): string {
   return `${signal.componentId}:${signal.portId}`;
@@ -224,12 +225,16 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       const meta = COMPONENT_METADATA[type];
       const initialBitWidth = type === 'REGISTER' || type === 'HEX_DISPLAY' || type === 'ADDER'
         ? 4
+        : type === 'RAM' || type === 'ROM' ? 8
         : type === 'PRIORITY_ENCODER' ? 4
         : type === 'DECODER' ? 2
         : type === 'SPLITTER' ? 2 : 1;
       const initialInputs = (
-        ['AND', 'OR', 'NAND', 'NOR', 'XOR', 'XNOR', 'MULTIPLEXER', 'DEMULTIPLEXER'].includes(type)
+        ['AND', 'OR', 'NAND', 'NOR', 'XOR', 'XNOR', 'MULTIPLEXER', 'DEMULTIPLEXER', 'RAM', 'ROM'].includes(type)
       ) ? 2 : undefined;
+      const initialMemory = type === 'RAM' || type === 'ROM'
+        ? Array.from({ length: 2 ** (initialInputs ?? 2) }, () => Array(initialBitWidth).fill('0'))
+        : undefined;
 
       const newComp: ComponentInstance = {
         id,
@@ -243,6 +248,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         state: {
           value: Array(initialBitWidth).fill(type === 'CONSTANT' ? '1' : '0'),
           q: type === 'REGISTER' ? Array(initialBitWidth).fill('0') : '0',
+          ...(initialMemory ? { memory: initialMemory } : {}),
         },
       };
 
@@ -569,7 +575,16 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         set({ navigationStack: updateNavigationStack(nextComponents, get().wires) });
         get().simulator.setPinValue(componentId, 'out', nextVal);
         get().simulator.step();
-        pushHistory(nextComponents, get().wires);
+        const stateSynchronizedComponents = nextComponents.map(component => {
+          if (!STATEFUL_COMPONENT_TYPES.has(component.type)) return component;
+          const state = get().simulator.getComponentState(component.id);
+          return state && JSON.stringify(state) !== JSON.stringify(component.state)
+            ? { ...component, state }
+            : component;
+        });
+        set({ components: stateSynchronizedComponents });
+        set({ navigationStack: updateNavigationStack(stateSynchronizedComponents, get().wires) });
+        pushHistory(stateSynchronizedComponents, get().wires);
       }
     },
 
@@ -594,6 +609,14 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       }
 
       sim.step();
+      let stateChanged = false;
+      const stateSynchronizedComponents = nextComponents.map(component => {
+        if (!STATEFUL_COMPONENT_TYPES.has(component.type)) return component;
+        const state = sim.getComponentState(component.id);
+        if (!state || JSON.stringify(state) === JSON.stringify(component.state)) return component;
+        stateChanged = true;
+        return { ...component, state };
+      });
       const nextTick = get().ticks + 1;
       const { tracedSignals, signalHistory } = get();
       const sample: SignalTraceSample = {
@@ -604,6 +627,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         ])),
       };
       set({
+        ...(stateChanged ? { components: stateSynchronizedComponents } : {}),
         ticks: nextTick,
         signalHistory: tracedSignals.length
           ? [...signalHistory, sample].slice(-MAX_SIGNAL_HISTORY)

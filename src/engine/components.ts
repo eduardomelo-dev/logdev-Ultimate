@@ -426,6 +426,39 @@ export const COMPONENT_METADATA: Record<ComponentType, ComponentMetadata> = {
       { id: 'q', name: 'Q (Saída)', type: 'out', bitWidth, relX: 70, relY: 30 },
     ],
   },
+  RAM: {
+    type: 'RAM',
+    name: 'RAM',
+    category: 'memory',
+    description: 'Memória volátil com leitura assíncrona e escrita na borda de subida do clock',
+    width: 100,
+    height: 100,
+    getPorts: (addressBits = 2, bitWidth = 8) => {
+      const addressWidth = Math.max(1, Math.min(5, Math.floor(addressBits)));
+      return [
+        { id: 'addr', name: 'Endereço', type: 'in', bitWidth: addressWidth, relX: 0, relY: 20 },
+        { id: 'dataIn', name: 'Dados de entrada', type: 'in', bitWidth, relX: 0, relY: 45 },
+        { id: 'writeEnable', name: 'Habilitar escrita', type: 'in', bitWidth: 1, relX: 0, relY: 70 },
+        { id: 'clk', name: 'Clock', type: 'in', bitWidth: 1, relX: 0, relY: 90 },
+        { id: 'dataOut', name: 'Dados de saída', type: 'out', bitWidth, relX: 100, relY: 45 },
+      ];
+    },
+  },
+  ROM: {
+    type: 'ROM',
+    name: 'ROM',
+    category: 'memory',
+    description: 'Memória somente leitura configurável com saída assíncrona',
+    width: 80,
+    height: 60,
+    getPorts: (addressBits = 2, bitWidth = 8) => {
+      const addressWidth = Math.max(1, Math.min(5, Math.floor(addressBits)));
+      return [
+        { id: 'addr', name: 'Endereço', type: 'in', bitWidth: addressWidth, relX: 0, relY: 20 },
+        { id: 'dataOut', name: 'Dados de saída', type: 'out', bitWidth, relX: 80, relY: 40 },
+      ];
+    },
+  },
 
   // --- INPUT/OUTPUT ---
   BUTTON: {

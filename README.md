@@ -35,6 +35,7 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 
 ### Próxima versão — em desenvolvimento
 
+- **Navegação guiada:** a marca e as cores existentes são preservadas; os controles ficam agrupados por edição, análise, simulação e projeto, e o canvas vazio apresenta um passo a passo para montar o primeiro circuito.
 - **Análise combinacional:** o botão **Analisar** gera a tabela-verdade, expressões booleanas minimizadas e mapas de Karnaugh a partir dos pinos de entrada, saídas e sondas conectados.
 - **Execução isolada:** cada combinação é simulada em uma instância temporária; a análise não altera entradas, estado ou execução do circuito aberto.
 - **Limites explícitos:** aceita circuitos de até 200 componentes e 8 entradas conectadas de 1 bit (256 combinações). Os mapas de Karnaugh são exibidos até 4 entradas; tabela e expressões continuam disponíveis até 8.
@@ -47,7 +48,8 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Aritmética, barramentos e seleção:** o somador aceita barramentos de 1 a 32 bits e carry-in/out; o splitter distribui/reúne de 2 a 32 bits; MUX e DEMUX aceitam dados de 1 a 32 bits e podem ser configurados para 2, 4 ou 8 linhas. Decodificador 1:2 até 5:32 e codificador prioritário com 2 a 32 requisições. A seleção multibit usa o bit 0 como menos significativo; o codificador dá prioridade ao índice mais alto.
 - **Montagem mais segura:** ao desconectar ou mover portas reconfiguráveis, entradas sem fio voltam a `Z`, estados de pinos seguem o snapshot do projeto e conexões são reposicionadas junto às portas.
 - **Junções e ramificações:** clique com o botão direito sobre um fio e escolha **Inserir junção e criar ramificação**. A junção fica exatamente no traçado; clique no ponto da junção e depois em uma porta para desenhar o novo ramo. Fios que apenas se cruzam não se conectam sem uma junção explícita.
-- **Sem paridade total ainda:** comparadores, shifters, memórias RAM/ROM, mais componentes sequenciais, importação HDL e integração FPGA continuam em etapas futuras.
+- **RAM e ROM configuráveis:** memórias com 1–5 bits de endereço (2–32 posições) e palavras de 1–32 bits. A RAM lê de forma assíncrona e grava na borda de subida do clock com habilitação; a ROM aceita conteúdo binário de 4 estados no inspetor. O estado da RAM é mantido no projeto e recuperado ao reabrir.
+- **Sem paridade total ainda:** comparadores, shifters, componentes sequenciais adicionais, importação de projetos Logisim/HDL e integração FPGA continuam em etapas futuras.
 
 ---
 
@@ -68,7 +70,7 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Animação de sinais ativos:** traços verdes percorrem fios em nível lógico `1` enquanto a simulação está rodando. A animação pausa junto com a simulação; a renderização estática continua disponível.
 - **Modo Interativo "Poke" (Mãozinha):**
   - Alterne interruptores, chaves gangorra e pinos de entrada com um clique direto sobre o circuito, observando as ondas de propagação instantaneamente.
-- **Análise e verificação (em desenvolvimento para a próxima versão):** tabelas-verdade, mapas de Karnaugh, cronograma temporal e vetores de teste para circuitos combinacionais e sequenciais.
+- **Análise e verificação:** tabelas-verdade, mapas de Karnaugh, cronograma temporal e vetores de teste para circuitos combinacionais e sequenciais.
 - **Exportação Profissional:**
   - **Exportar PDF:** Gera diagramas em folha **A4 branca e monocromática**, ajustados automaticamente a uma única página; a orientação retrato ou paisagem acompanha o formato do circuito.
   - **Exportar JPEG:** Renderiza imagens nítidas em alta resolução (escala 2x DPI) com fundo escuro elegante.

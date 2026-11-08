@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Code2,
   Table2,
+  Cable,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
 import { Simulator } from '../engine/simulator';
@@ -117,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
   };
 
   return (
-    <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
+    <header className="app-header shrink-0 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
       {/* Brand & System Logo */}
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 overflow-hidden rounded-xl border border-slate-700 shadow-md shadow-cyan-950/30">
@@ -143,9 +144,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
       </div>
 
       {/* Main Interactive Toolbar */}
-      <div className="flex items-center gap-2 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+      <div className="app-header-toolbar">
+        <div className="toolbar-group" aria-label="Ferramentas de edição">
+          <span className="toolbar-group-label">EDITAR</span>
         {/* Tool selector */}
         <button
+          aria-pressed={tool === 'poke'}
           onClick={() => setTool('poke')}
           title="Ferramenta Poke (Mãozinha): clique em chaves e pinos para interagir"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
@@ -159,6 +163,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
         </button>
 
         <button
+          aria-pressed={tool === 'select'}
           onClick={() => setTool('select')}
           title="Ferramenta de seleção. Arraste no canvas para selecionar vários elementos."
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
@@ -171,8 +176,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
           <span>Selecionar</span>
         </button>
 
-        <div className="w-px h-5 bg-slate-800 mx-1" />
+        <button
+          aria-pressed={tool === 'wire'}
+          onClick={() => setTool('wire')}
+          title="Conectar: clique em uma porta e depois na porta de destino para criar um fio"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+            tool === 'wire'
+              ? 'bg-slate-700 text-white'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+        >
+          <Cable className="w-4 h-4" />
+          <span>Conectar</span>
+        </button>
+        </div>
 
+        <div className="toolbar-group" aria-label="Análise">
+          <span className="toolbar-group-label">ANÁLISE</span>
         <button
           onClick={onOpenLogicAnalyzer}
           title="Abrir análise e verificação: tabela-verdade, cronograma e vetores de teste"
@@ -181,9 +201,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
           <Table2 className="h-4 w-4" />
           <span>Analisar</span>
         </button>
+        </div>
 
-        <div className="w-px h-5 bg-slate-800 mx-1" />
-
+        <div className="toolbar-group" aria-label="Controles da simulação">
+          <span className="toolbar-group-label">SIMULAR</span>
         {/* Simulation Controls */}
         <button
           onClick={() => setRunning(!isSimulating)}
@@ -204,11 +225,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
           className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
         >
           <StepForward className="w-4 h-4" />
+          <span className="hidden xl:inline text-xs">1 passo</span>
         </button>
 
         {/* Frequency selector */}
         <div className="flex items-center gap-1 text-xs text-slate-400 pl-1">
-          <span>Clock:</span>
+          <span title="Frequência da simulação">Velocidade:</span>
           <select
             value={clockFrequency}
             onChange={(e) => setClockFrequency(Number(e.target.value))}
@@ -221,9 +243,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
             <option value={20}>20 Hz</option>
           </select>
         </div>
+        </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2">
+        <div className="toolbar-group" aria-label="Ações do projeto">
+          <span className="toolbar-group-label">PROJETO</span>
           {/* Import */}
           <input
             type="file"
@@ -297,11 +321,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
           {/* Clear Canvas */}
           <button
             onClick={resetCircuit}
-            title="Limpar Área de Trabalho"
+            title="Limpar o circuito atual"
             className="p-2 text-slate-400 hover:text-red-300 bg-slate-800 hover:bg-red-950/30 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700 hover:border-red-900/50"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden md:inline">Limpar</span>
+            <span className="hidden md:inline">Limpar circuito</span>
           </button>
         </div>
       </div>

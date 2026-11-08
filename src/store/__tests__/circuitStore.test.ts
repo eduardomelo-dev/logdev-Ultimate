@@ -61,6 +61,38 @@ describe('Circuit Store', () => {
     expect(updated?.state?.value).toEqual(['1']);
   });
 
+  it('persists RAM writes made by toggling its clock input', () => {
+    const store = useCircuitStore.getState();
+    store.loadCircuit({
+      components: [
+        { id: 'address', type: 'PIN_INPUT', x: 0, y: 0, bitWidth: 1, state: { value: ['0'] } },
+        { id: 'data', type: 'PIN_INPUT', x: 0, y: 40, bitWidth: 2, state: { value: ['1', '0'] } },
+        { id: 'write-enable', type: 'PIN_INPUT', x: 0, y: 80, state: { value: ['1'] } },
+        { id: 'clock', type: 'PIN_INPUT', x: 0, y: 120, state: { value: ['0'] } },
+        {
+          id: 'ram',
+          type: 'RAM',
+          x: 120,
+          y: 0,
+          inputs: 1,
+          bitWidth: 2,
+          state: { memory: [['0', '0'], ['0', '0']] },
+        },
+      ],
+      wires: [
+        { id: 'address-ram', from: { componentId: 'address', portId: 'out' }, to: { componentId: 'ram', portId: 'addr' }, points: [] },
+        { id: 'data-ram', from: { componentId: 'data', portId: 'out' }, to: { componentId: 'ram', portId: 'dataIn' }, points: [] },
+        { id: 'enable-ram', from: { componentId: 'write-enable', portId: 'out' }, to: { componentId: 'ram', portId: 'writeEnable' }, points: [] },
+        { id: 'clock-ram', from: { componentId: 'clock', portId: 'out' }, to: { componentId: 'ram', portId: 'clk' }, points: [] },
+      ],
+    });
+
+    useCircuitStore.getState().togglePinValue('clock');
+
+    expect(useCircuitStore.getState().components.find(component => component.id === 'ram')?.state?.memory[0])
+      .toEqual(['1', '0']);
+  });
+
   it('records only selected signals and bounds chronogram history', () => {
     const store = useCircuitStore.getState();
     store.loadCircuit({

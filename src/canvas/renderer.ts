@@ -16,7 +16,7 @@ export function getLogicColor(val: LogicValue | undefined): string {
 
 export function renderGrid(ctx: CanvasRenderingContext2D, width: number, height: number, pan: Point, zoom: number) {
   ctx.save();
-  ctx.fillStyle = '#0f172a'; // Deep slate dark background
+  ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, width, height);
 
   ctx.translate(pan.x, pan.y);

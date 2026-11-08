@@ -578,6 +578,34 @@ export const CircuitCanvas: React.FC = () => {
         onContextMenu={handleContextMenu}
         onDoubleClick={handleDoubleClick}
       />
+      {components.length === 0 && !pendingComponentType && (
+        <section className="empty-canvas-card rounded-xl border border-slate-700 bg-slate-900/95 p-5 text-slate-200 shadow-2xl shadow-slate-950/50">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400">
+            Seu espaço de trabalho
+          </div>
+          <h2 className="text-lg font-semibold text-white">Comece um circuito</h2>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            Monte a lógica colocando componentes no canvas e conectando suas portas.
+          </p>
+          <button
+            type="button"
+            onClick={() => setPendingComponentType('PIN_INPUT')}
+            className="pointer-events-auto mt-4 w-full rounded-lg border border-cyan-700/70 bg-cyan-950/50 px-3 py-2 text-left text-xs font-medium text-cyan-200 transition hover:border-cyan-500 hover:bg-cyan-900/50"
+          >
+            1. Adicionar uma entrada
+          </button>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] leading-relaxed text-slate-400">
+            <div className="rounded-md bg-slate-800/70 p-2">
+              <span className="mb-0.5 block font-semibold text-slate-200">2. Escolha a lógica</span>
+              Abra uma categoria na biblioteca à esquerda.
+            </div>
+            <div className="rounded-md bg-slate-800/70 p-2">
+              <span className="mb-0.5 block font-semibold text-slate-200">3. Faça a ligação</span>
+              Clique em duas portas para conectar.
+            </div>
+          </div>
+        </section>
+      )}
       {contextMenu && (
         <div
           role="menu"

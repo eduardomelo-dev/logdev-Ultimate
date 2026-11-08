@@ -14,7 +14,83 @@ html, body, #root {
   user-select: none;
 }
 
-/* Custom scrollbars */
+.app-header {
+  min-height: 100px;
+  padding-block: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+}
+
+.app-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 3px 7px;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  background: rgb(2 6 23 / 45%);
+}
+
+.toolbar-group-label {
+  padding-inline: 4px;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.empty-canvas-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: min(390px, calc(100% - 32px));
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+@media (max-width: 1050px) {
+  .app-header {
+    min-height: 130px;
+  }
+
+  .app-header-toolbar {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    min-height: 156px;
+    padding-inline: 8px;
+  }
+
+  .toolbar-group-label {
+    display: none;
+  }
+
+  .toolbar-group {
+    gap: 2px;
+    padding-inline: 4px;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
