@@ -3,8 +3,6 @@ import {
   Play,
   Pause,
   StepForward,
-  Hand,
-  MousePointer,
   Trash2,
   Download,
   Upload,
@@ -13,7 +11,8 @@ import {
   Image as ImageIcon,
   Code2,
   Table2,
-  Cable,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
 import { Simulator } from '../engine/simulator';
@@ -32,13 +31,13 @@ function getProjectExportContext() {
 }
 
 interface HeaderProps {
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
   onOpenLogicAnalyzer: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
+export const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, onOpenLogicAnalyzer }) => {
   const {
-    tool,
-    setTool,
     isSimulating,
     setRunning,
     stepSimulation,
@@ -119,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
   return (
     <header className="app-header shrink-0 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
       {/* Brand & System Logo */}
-      <div className="nexus-brand flex items-center gap-3">
+      <div className="app-header-brand nexus-brand flex items-center gap-3">
         <div className="nexus-brand-mark" role="img" aria-label="Logdev Ultimate">
           <svg viewBox="0 0 48 48" aria-hidden="true">
             <path d="M12 14h8v8h8v12h8" />
@@ -145,54 +144,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
         </div>
       </div>
 
+      <div className="app-header-context" aria-label="Área de trabalho atual">
+        <span className="app-header-context-label">BANCADA</span>
+        <span className="app-header-context-title">Montagem de circuitos</span>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={onToggleTheme}
+          aria-label={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
+          title={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
+        >
+          {theme === 'light' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+          <span>{theme === 'light' ? 'Escuro' : 'Claro'}</span>
+        </button>
+      </div>
+
       {/* Main Interactive Toolbar */}
       <div className="app-header-toolbar">
-        <div className="toolbar-group" aria-label="Ferramentas de edição">
-          <span className="toolbar-group-label">EDITAR</span>
-        {/* Tool selector */}
-        <button
-          aria-pressed={tool === 'poke'}
-          onClick={() => setTool('poke')}
-          title="Ferramenta Poke (Mãozinha): clique em chaves e pinos para interagir"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-            tool === 'poke'
-              ? 'bg-slate-700 text-white'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-        >
-          <Hand className="w-4 h-4" />
-          <span>Interagir</span>
-        </button>
-
-        <button
-          aria-pressed={tool === 'select'}
-          onClick={() => setTool('select')}
-          title="Ferramenta de seleção. Arraste no canvas para selecionar vários elementos."
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-            tool === 'select'
-              ? 'bg-slate-700 text-white'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-        >
-          <MousePointer className="w-4 h-4" />
-          <span>Selecionar</span>
-        </button>
-
-        <button
-          aria-pressed={tool === 'wire'}
-          onClick={() => setTool('wire')}
-          title="Conectar: clique em uma porta e depois na porta de destino para criar um fio"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-            tool === 'wire'
-              ? 'bg-slate-700 text-white'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-          }`}
-        >
-          <Cable className="w-4 h-4" />
-          <span>Conectar</span>
-        </button>
-        </div>
-
         <div className="toolbar-group" aria-label="Análise">
           <span className="toolbar-group-label">ANÁLISE</span>
         <button

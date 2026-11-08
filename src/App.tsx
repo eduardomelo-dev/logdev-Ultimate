@@ -5,6 +5,7 @@ import { Inspector } from './components/Inspector';
 import { LogicAnalyzer } from './components/LogicAnalyzer';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
+import { ToolRail } from './components/ToolRail';
 import { FirstRunTutorial, FIRST_RUN_TUTORIAL_KEY } from './components/FirstRunTutorial';
 import { useCircuitPersistence } from './hooks/useCircuitPersistence';
 import { useCircuitStore } from './store/circuitStore';
@@ -12,6 +13,14 @@ import { useCircuitStore } from './store/circuitStore';
 export const App: React.FC = () => {
   const [isLogicAnalyzerOpen, setLogicAnalyzerOpen] = useState(false);
   const [isFirstRunTutorialOpen, setFirstRunTutorialOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      return window.localStorage.getItem('logdev-theme') === 'dark' ? 'dark' : 'light';
+    } catch (error) {
+      console.error('Não foi possível carregar a preferência de tema.', error);
+      return 'light';
+    }
+  });
   const persistenceStatus = useCircuitPersistence();
   const {
     isSimulating,
@@ -30,6 +39,15 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem('logdev-theme', theme);
+    } catch (error) {
+      console.error('Não foi possível salvar a preferência de tema.', error);
+    }
+  }, [theme]);
+
   const navigateToDepth = (depth: number) => {
     for (let currentDepth = navigationStack.length; currentDepth > depth; currentDepth--) {
       exitSubcircuit();
@@ -47,12 +65,17 @@ export const App: React.FC = () => {
   }, [isSimulating, clockFrequency, stepSimulation]);
 
   return (
-    <div className="nexus-shell flex flex-col w-screen h-screen min-w-0 overflow-hidden bg-slate-950 font-sans">
-      <Header onOpenLogicAnalyzer={() => setLogicAnalyzerOpen(true)} />
-      <div className="flex-1 min-h-0 min-w-0 flex overflow-hidden relative">
+    <div className={`nexus-shell theme-${theme} flex flex-col w-screen h-screen min-w-0 overflow-hidden bg-slate-950 font-sans`}>
+      <Header
+        theme={theme}
+        onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+        onOpenLogicAnalyzer={() => setLogicAnalyzerOpen(true)}
+      />
+      <div className="nexus-workspace flex-1 min-h-0 min-w-0 flex overflow-hidden relative">
         <Sidebar />
-        <main className="flex-1 min-h-0 min-w-0 h-full relative">
-          <CircuitCanvas />
+        <main className="canvas-workspace flex-1 min-h-0 min-w-0 h-full relative">
+          <CircuitCanvas theme={theme} />
+          <ToolRail />
           {navigationStack.length > 0 && (
             <nav
               aria-label="Navegação de subcircuitos"

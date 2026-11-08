@@ -384,6 +384,373 @@ html, body, #root {
   }
 }
 
+/* Atelier workspace theme: a light drafting surface with the existing mark untouched. */
+html,
+body,
+#root {
+  background-color: #e8e7e1;
+  color: #233144;
+}
+
+.nexus-shell {
+  --atelier-paper: #efeee8;
+  --atelier-panel: #faf9f5;
+  --atelier-raised: #f0efe9;
+  --atelier-ink: #243246;
+  --atelier-muted: #687485;
+  --atelier-line: #d3d2c9;
+  --atelier-blue: #244b70;
+  --atelier-orange: #ce6938;
+  --atelier-teal: #237b79;
+  background: var(--atelier-paper);
+  color: var(--atelier-ink);
+}
+
+.nexus-shell .app-header {
+  min-height: 104px;
+  border-color: #d4d1c6;
+  background: linear-gradient(105deg, #fbfaf6, #f3f2ed 72%, #eeeee9);
+  box-shadow: 0 3px 14px rgb(34 42 53 / 8%);
+}
+
+.nexus-shell .app-header-toolbar {
+  gap: 8px;
+}
+
+.nexus-shell .toolbar-group {
+  min-height: 39px;
+  border-color: #d4d2c8;
+  border-radius: 7px;
+  background: #f7f6f1;
+  box-shadow: 0 1px 2px rgb(35 49 68 / 5%);
+}
+
+.nexus-shell .toolbar-group-label {
+  color: #758091;
+  font-size: 9px;
+}
+
+.nexus-shell:not(.nexus-brand) .app-header-toolbar .text-slate-400,
+.nexus-shell:not(.nexus-brand) .app-header-toolbar .text-slate-300,
+.nexus-shell:not(.nexus-brand) .app-header-toolbar .text-slate-200 {
+  color: #4a586b;
+}
+
+.nexus-shell .app-header button {
+  border-color: transparent;
+  color: #465469;
+}
+
+.nexus-shell .app-header .toolbar-group button[aria-pressed="true"],
+.nexus-shell .app-header button[class~="bg-slate-700"] {
+  border-color: #173d5c;
+  background: linear-gradient(135deg, #244b70, #183d5a);
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(36 75 112 / 18%);
+}
+
+.nexus-shell .app-header button[class~="bg-slate-800"] {
+  border-color: #d3d1c8;
+  background: #f5f4ef;
+  color: #405166;
+}
+
+.nexus-shell .app-header button[class~="bg-slate-800"]:hover {
+  border-color: #c3bfb3;
+  background: #ebe9e1;
+  color: #9c4c2b;
+}
+
+.nexus-shell .app-header .toolbar-group .text-slate-400,
+.nexus-shell .app-header .toolbar-group .text-slate-300,
+.nexus-shell .app-header .toolbar-group .text-slate-200,
+.nexus-shell .nexus-sidebar .text-slate-100,
+.nexus-shell .nexus-sidebar .text-slate-200,
+.nexus-shell .nexus-sidebar .text-slate-300,
+.nexus-shell .nexus-inspector .text-slate-100,
+.nexus-shell .nexus-inspector .text-slate-200,
+.nexus-shell .nexus-inspector .text-slate-300,
+.nexus-shell .nexus-analysis .text-slate-100,
+.nexus-shell .nexus-analysis .text-slate-200,
+.nexus-shell .nexus-analysis .text-slate-300 {
+  color: #344357;
+}
+
+.nexus-shell .nexus-sidebar .text-slate-400,
+.nexus-shell .nexus-inspector .text-slate-400,
+.nexus-shell .nexus-analysis .text-slate-400 {
+  color: #657184;
+}
+
+.nexus-shell .app-header .toolbar-group button[aria-pressed="false"]:hover,
+.nexus-shell .app-header .toolbar-group button:hover {
+  color: var(--atelier-orange);
+  background: #eceae3;
+}
+
+.nexus-shell .app-header select {
+  border-color: #d0cec4;
+  background-color: #fffefa;
+  color: #25354a;
+}
+
+.nexus-shell .app-header .nexus-brand > div:last-child > span {
+  color: #7b8490;
+}
+
+.nexus-shell .nexus-sidebar,
+.nexus-shell .nexus-inspector {
+  border-color: var(--atelier-line);
+  background: var(--atelier-panel);
+  color: var(--atelier-muted);
+  box-shadow: none;
+}
+
+.nexus-shell .nexus-sidebar > div:first-child {
+  border-color: #d8d6cd;
+  background: #f5f4ef;
+}
+
+.nexus-shell .nexus-sidebar input,
+.nexus-shell .nexus-inspector input,
+.nexus-shell .nexus-inspector textarea,
+.nexus-shell .nexus-inspector select {
+  border-color: #d3d1c8;
+  background-color: #fffefa;
+  color: #28374a;
+}
+
+.nexus-shell .nexus-sidebar input::placeholder {
+  color: #8d9297;
+}
+
+.nexus-shell .nexus-sidebar button[aria-expanded="true"] {
+  border-color: #d6b69e;
+  background: #f4e8dd;
+  color: #8d492a;
+}
+
+.nexus-shell .nexus-sidebar button:hover,
+.nexus-shell .nexus-inspector button:hover {
+  border-color: #d8a17e;
+  color: #ad542d;
+}
+
+.nexus-shell .nexus-inspector > div > div:first-child {
+  border-color: #d6d3c8;
+  background: linear-gradient(135deg, #f4f2eb, #ecebe4);
+}
+
+.nexus-shell .nexus-inspector > div > div:first-child > div:first-child {
+  color: #314a61;
+}
+
+.nexus-shell .nexus-inspector .bg-slate-950 {
+  border-color: #d6d4cb;
+  background: #f2f1eb;
+}
+
+.nexus-shell .nexus-canvas {
+  background: #e8e7e1;
+}
+
+.nexus-shell .nexus-canvas > canvas {
+  filter: none;
+}
+
+.nexus-shell .empty-canvas-card {
+  border-color: #cecbc0;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(206 105 56 / 7%), transparent 42%),
+    rgb(250 249 245 / 97%);
+  box-shadow: 0 16px 48px rgb(32 40 48 / 12%), inset 0 1px #fff;
+}
+
+.nexus-shell .empty-canvas-card > div:first-child {
+  color: #a64e2b;
+}
+
+.nexus-shell .empty-canvas-card h2,
+.nexus-shell .empty-canvas-card > div:last-child > div > span {
+  color: #27394b;
+}
+
+.nexus-shell .empty-canvas-card p,
+.nexus-shell .empty-canvas-card > div:last-child > div {
+  color: #657184;
+}
+
+.nexus-shell .empty-canvas-card > button {
+  border-color: #285578;
+  background: linear-gradient(105deg, #244b70, #1d5e73);
+  color: #fff;
+}
+
+.nexus-shell .empty-canvas-card > button:hover {
+  background: linear-gradient(105deg, #1e405f, #174f62);
+}
+
+.nexus-shell .empty-canvas-card > div:last-child > div {
+  background: #f0efe9;
+}
+
+.nexus-shell .nexus-breadcrumb {
+  border-color: #c9c7bc;
+  background: rgb(250 249 245 / 96%);
+  box-shadow: 0 4px 14px rgb(32 40 48 / 10%);
+}
+
+.nexus-shell .nexus-breadcrumb button {
+  color: #3a526a;
+}
+
+.nexus-shell .nexus-breadcrumb span {
+  color: #a1a198;
+}
+
+.nexus-shell .nexus-statusbar {
+  min-height: 30px;
+  border-color: #193950;
+  background: linear-gradient(90deg, #183a53, #1c344b 58%, #28394c);
+  color: #d1dce4;
+}
+
+.nexus-shell .nexus-statusbar > div:first-child > div:first-child > span:first-child {
+  background: #61d6bc;
+  box-shadow: 0 0 7px rgb(97 214 188 / 48%);
+}
+
+.nexus-shell .nexus-statusbar .text-slate-200,
+.nexus-shell .nexus-statusbar .text-slate-300 {
+  color: #f4f6f3;
+}
+
+.nexus-shell .nexus-statusbar .text-slate-400,
+.nexus-shell .nexus-statusbar .text-slate-500 {
+  color: #bdc9d2;
+}
+
+.nexus-shell .nexus-analysis {
+  border-color: #c9c8c0;
+  background: #f7f6f1;
+  color: #344255;
+}
+
+.nexus-shell .nexus-analysis > header {
+  border-color: #dedcd3;
+  background: linear-gradient(90deg, #f0efe9, #f8f7f3);
+}
+
+.nexus-shell .nexus-analysis .text-slate-100,
+.nexus-shell .nexus-analysis .text-slate-200,
+.nexus-shell .nexus-analysis .text-slate-300 {
+  color: #29394e;
+}
+
+.nexus-shell .nexus-analysis .bg-slate-950,
+.nexus-shell .nexus-analysis .bg-slate-900 {
+  background-color: #fffefa;
+}
+
+.nexus-shell .nexus-analysis .bg-slate-800 {
+  background-color: #e9e8e1;
+}
+
+.nexus-shell .nexus-analysis .border-slate-700,
+.nexus-shell .nexus-analysis .border-slate-800 {
+  border-color: #d5d3ca;
+}
+
+.nexus-shell .nexus-analysis-overlay {
+  background: rgb(24 34 46 / 42%);
+  backdrop-filter: blur(5px);
+}
+
+.nexus-shell .nexus-tutorial {
+  border-color: #cbc9bf;
+  background:
+    radial-gradient(ellipse at 92% 8%, rgb(206 105 56 / 6%), transparent 34%),
+    #faf9f5;
+  box-shadow: 0 24px 70px rgb(25 34 43 / 24%);
+}
+
+.nexus-shell .nexus-tutorial-topline {
+  background: linear-gradient(90deg, #244b70, #3a8b8b 58%, #ce6938);
+}
+
+.nexus-shell .nexus-tutorial-icon {
+  border-color: #b7c8d3;
+  background: #e7eeed;
+  color: #286d70;
+}
+
+.nexus-shell .nexus-tutorial .text-white,
+.nexus-shell .nexus-tutorial .text-slate-100,
+.nexus-shell .nexus-tutorial .text-slate-200,
+.nexus-shell .nexus-tutorial .text-slate-300 {
+  color: #27394b;
+}
+
+.nexus-shell .nexus-tutorial .text-slate-400,
+.nexus-shell .nexus-tutorial .text-slate-500 {
+  color: #667486;
+}
+
+.nexus-shell .nexus-tutorial .border-slate-800,
+.nexus-shell .nexus-tutorial .border-slate-700 {
+  border-color: #d7d5cc;
+}
+
+.nexus-shell .nexus-tutorial-tip {
+  border-color: #dedbd1;
+  background: #f1f0ea;
+}
+
+.nexus-shell .nexus-tutorial button[aria-label="Fechar tutorial"] {
+  color: #697789;
+}
+
+.nexus-shell .nexus-tutorial button[aria-label="Fechar tutorial"]:hover {
+  background: #eceae3;
+  color: #263a4d;
+}
+
+.nexus-shell .nexus-tutorial button:not([aria-label="Fechar tutorial"]):hover {
+  color: #9c4c2b;
+}
+
+.nexus-shell .nexus-tutorial button.bg-indigo-500 {
+  border-color: #234a6d;
+  background: #244b70;
+  color: #fff;
+}
+
+.nexus-shell .nexus-tutorial button.bg-cyan-400 {
+  border-color: #1d6967;
+  background: #287c79;
+  color: #fff;
+}
+
+.nexus-shell .nexus-tutorial-dot {
+  background: #c9c8bf;
+}
+
+.nexus-shell .nexus-tutorial-dot.is-active {
+  background: linear-gradient(90deg, #244b70, #3a8b8b);
+}
+
+.nexus-shell ::-webkit-scrollbar-track {
+  background: #eeede7;
+}
+
+.nexus-shell ::-webkit-scrollbar-thumb {
+  background: #c1c0b7;
+}
+
+.nexus-shell ::-webkit-scrollbar-thumb:hover {
+  background: #a5a399;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -397,4 +764,672 @@ html, body, #root {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #536fe8;
+}
+
+/* Atelier redesign: distinct command header, component catalog, canvas desk, and inspector. */
+.nexus-shell {
+  background: #e7e5de;
+}
+
+.nexus-shell .app-header {
+  display: grid;
+  grid-template-areas:
+    "brand context"
+    "toolbar toolbar";
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 39px 44px;
+  gap: 7px;
+  min-height: 102px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #c9c7bc;
+  background: #fbfaf6;
+  box-shadow: 0 2px 8px rgb(34 42 53 / 7%);
+}
+
+.nexus-shell .app-header-brand {
+  grid-area: brand;
+  min-height: 39px;
+  width: fit-content;
+  padding-right: 16px;
+}
+
+.nexus-shell .app-header-context {
+  grid-area: context;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  border-left: 1px solid #e1dfd6;
+}
+
+.nexus-shell .app-header-context-label {
+  color: #a45d37;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.nexus-shell .app-header-context-title {
+  color: #3e4e60;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.nexus-shell .app-header-toolbar {
+  grid-area: toolbar;
+  min-width: 0;
+  min-height: 44px;
+  flex-wrap: nowrap;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.nexus-shell .toolbar-group {
+  min-height: 36px;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: #f2f1eb;
+  box-shadow: none;
+}
+
+.nexus-shell .toolbar-group-label {
+  padding-inline: 5px;
+  color: #777e85;
+  letter-spacing: 0.1em;
+}
+
+.nexus-shell .nexus-workspace {
+  display: grid;
+  grid-template-columns: 274px minmax(260px, 1fr) 292px;
+  gap: 10px;
+  padding: 10px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 28%), transparent 48%),
+    #e7e5de;
+}
+
+.nexus-shell .nexus-sidebar,
+.nexus-shell .nexus-inspector {
+  width: auto;
+  min-width: 0;
+  border: 1px solid #d2d0c6;
+  border-radius: 9px;
+  background: #fbfaf6;
+  color: #566477;
+  box-shadow: 0 2px 6px rgb(34 42 53 / 5%);
+}
+
+.nexus-shell .nexus-sidebar {
+  overflow: hidden;
+}
+
+.nexus-shell .nexus-sidebar > div:first-child {
+  padding: 14px 13px 12px;
+  border-bottom: 1px solid #e1dfd6;
+  background: #f5f4ee;
+}
+
+.nexus-shell .nexus-sidebar > div:first-child > div:first-child {
+  margin-bottom: 9px;
+  color: #32465b;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.nexus-shell .nexus-sidebar > div:first-child p {
+  margin-top: 7px;
+  line-height: 1.45;
+}
+
+.nexus-shell .nexus-sidebar > div:nth-child(2) {
+  padding: 9px;
+}
+
+.nexus-shell .nexus-sidebar > div:nth-child(2) > div {
+  margin-bottom: 4px;
+}
+
+.nexus-shell .nexus-sidebar button[aria-expanded] {
+  min-height: 38px;
+  padding-inline: 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.nexus-shell .nexus-sidebar button[aria-expanded="true"] {
+  border-color: #e1d4c7;
+  background: #f4ede5;
+  color: #74492f;
+}
+
+.nexus-shell .nexus-sidebar button[aria-expanded="true"] svg {
+  color: #a45d37;
+}
+
+.nexus-shell .nexus-sidebar [id^="component-category-"] {
+  padding: 5px 4px 7px 14px;
+}
+
+.nexus-shell .nexus-sidebar [id^="component-category-"] button {
+  min-height: 32px;
+  border-radius: 5px;
+}
+
+.nexus-shell .canvas-workspace {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #cbc9bf;
+  border-radius: 9px;
+  background: #e4e3dc;
+  box-shadow: 0 2px 7px rgb(34 42 53 / 7%);
+}
+
+.nexus-shell .canvas-workspace .nexus-canvas {
+  background: #e9e8e2;
+}
+
+.nexus-shell .workspace-toolrail {
+  position: absolute;
+  top: 66px;
+  right: 13px;
+  left: auto;
+  z-index: 8;
+  display: flex;
+  width: 68px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid #d0cec4;
+  border-radius: 8px;
+  background: rgb(250 249 245 / 96%);
+  box-shadow: 0 4px 14px rgb(34 42 53 / 12%);
+  backdrop-filter: blur(8px);
+}
+
+.nexus-shell .workspace-toolrail-label {
+  padding: 3px 0 5px;
+  color: #82878c;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.nexus-shell .workspace-tool-button {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #596777;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.nexus-shell .workspace-tool-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.nexus-shell .workspace-tool-button:hover {
+  border-color: #e1d4c7;
+  background: #f4ede5;
+  color: #8d492a;
+}
+
+.nexus-shell .workspace-tool-button[aria-pressed="true"] {
+  border-color: #244b70;
+  background: #244b70;
+  color: white;
+  box-shadow: 0 2px 5px rgb(36 75 112 / 18%);
+}
+
+.nexus-shell .nexus-breadcrumb {
+  top: 12px;
+  left: 12px;
+  border-radius: 6px;
+  padding: 7px 9px;
+}
+
+.nexus-shell .nexus-inspector {
+  padding: 14px;
+  overflow: hidden;
+}
+
+.nexus-shell .nexus-inspector > div:first-child {
+  flex: 0 0 auto;
+  margin: -2px -2px 13px;
+  padding: 10px 9px;
+  border: 0;
+  border-bottom: 1px solid #e1dfd6;
+  border-radius: 0;
+  background: transparent;
+}
+
+.nexus-shell .nexus-inspector > div:first-child > div:first-child {
+  color: #32465b;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.nexus-shell .nexus-inspector .bg-slate-950 {
+  border-radius: 6px;
+  background: #f1f0ea;
+}
+
+.nexus-shell .nexus-statusbar {
+  min-height: 32px;
+  padding-inline: 14px;
+  border-top: 1px solid #18364b;
+  background: #203d52;
+}
+
+@media (max-width: 1100px) {
+  .nexus-shell .nexus-workspace {
+    grid-template-columns: 230px minmax(220px, 1fr) 250px;
+    gap: 8px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .nexus-shell .app-header {
+    grid-template-rows: 36px 40px;
+    min-height: 92px;
+    padding: 6px 9px;
+  }
+
+  .nexus-shell .app-header-toolbar {
+    min-height: 40px;
+  }
+
+  .nexus-shell .app-header-context {
+    gap: 5px;
+    padding-inline: 7px;
+  }
+
+  .nexus-shell .app-header-context-title {
+    font-size: 10px;
+  }
+
+  .nexus-shell .nexus-workspace {
+    grid-template-columns: 190px minmax(180px, 1fr) 210px;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .nexus-shell .nexus-sidebar > div:first-child {
+    padding: 10px 9px;
+  }
+
+  .nexus-shell .nexus-inspector {
+    padding: 10px;
+  }
+
+  .nexus-shell .workspace-toolrail {
+    right: 7px;
+  }
+}
+
+.nexus-shell .theme-toggle {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-left: 5px;
+  padding: 0 9px;
+  border: 1px solid #d6d3c9;
+  border-radius: 6px;
+  background: #f5f4ee;
+  color: #405166;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.nexus-shell .theme-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.nexus-shell .theme-toggle:hover {
+  border-color: #b8c2c8;
+  background: #eceae3;
+  color: #244b70;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  background-color: #131a22;
+  color: #e5ebf1;
+}
+
+.nexus-shell.theme-dark {
+  --atelier-paper: #151d26;
+  --atelier-panel: #202a35;
+  --atelier-raised: #293542;
+  --atelier-ink: #e4eaf0;
+  --atelier-muted: #a7b3bf;
+  --atelier-line: #354351;
+  background: #151d26;
+  color: #e4eaf0;
+}
+
+.nexus-shell.theme-dark .app-header {
+  border-color: #354351;
+  background: #1c2631;
+  box-shadow: 0 2px 9px rgb(0 0 0 / 20%);
+}
+
+.nexus-shell.theme-dark .app-header-context {
+  border-color: #3a4855;
+}
+
+.nexus-shell.theme-dark .app-header-context-title {
+  color: #d3dce4;
+}
+
+.nexus-shell.theme-dark .app-header-context-label {
+  color: #e0a37c;
+}
+
+.nexus-shell.theme-dark .app-header-brand > div:last-child > span {
+  color: #a8b4c0;
+}
+
+.nexus-shell.theme-dark .toolbar-group {
+  border-color: #3a4855;
+  background: #232e39;
+}
+
+.nexus-shell.theme-dark .toolbar-group-label {
+  color: #9aa8b5;
+}
+
+.nexus-shell.theme-dark .app-header-toolbar .text-slate-400,
+.nexus-shell.theme-dark .app-header-toolbar .text-slate-300,
+.nexus-shell.theme-dark .app-header-toolbar .text-slate-200 {
+  color: #c1ccd5;
+}
+
+.nexus-shell.theme-dark .app-header .toolbar-group button:not([aria-pressed="true"]),
+.nexus-shell.theme-dark .app-header button[class~="bg-slate-800"] {
+  border-color: #3c4a57;
+  background: #2a3642;
+  color: #d3dce4;
+}
+
+.nexus-shell.theme-dark .app-header .toolbar-group button:not([aria-pressed="true"]):hover,
+.nexus-shell.theme-dark .app-header button[class~="bg-slate-800"]:hover {
+  border-color: #637583;
+  background: #344452;
+  color: #fff;
+}
+
+.nexus-shell.theme-dark .app-header select {
+  border-color: #465563;
+  background-color: #202b36;
+  color: #e2e8ee;
+}
+
+.nexus-shell.theme-dark .theme-toggle {
+  border-color: #465563;
+  background: #2a3642;
+  color: #e2e8ee;
+}
+
+.nexus-shell.theme-dark .theme-toggle:hover {
+  border-color: #73828e;
+  background: #344452;
+  color: #fff;
+}
+
+.nexus-shell.theme-dark .nexus-workspace {
+  background:
+    radial-gradient(ellipse at 48% 0%, rgb(49 67 83 / 20%), transparent 58%),
+    #151d26;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar,
+.nexus-shell.theme-dark .nexus-inspector {
+  border-color: #354351;
+  background: #202a35;
+  color: #a7b3bf;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 16%);
+}
+
+.nexus-shell.theme-dark .nexus-sidebar > div:first-child {
+  border-color: #394754;
+  background: #242f3a;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar > div:first-child > div:first-child,
+.nexus-shell.theme-dark .nexus-inspector > div:first-child > div:first-child {
+  color: #d4dee7;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar .text-slate-100,
+.nexus-shell.theme-dark .nexus-sidebar .text-slate-200,
+.nexus-shell.theme-dark .nexus-sidebar .text-slate-300,
+.nexus-shell.theme-dark .nexus-inspector .text-slate-100,
+.nexus-shell.theme-dark .nexus-inspector .text-slate-200,
+.nexus-shell.theme-dark .nexus-inspector .text-slate-300 {
+  color: #d3dce4;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar .text-slate-400,
+.nexus-shell.theme-dark .nexus-inspector .text-slate-400,
+.nexus-shell.theme-dark .nexus-sidebar .text-slate-500,
+.nexus-shell.theme-dark .nexus-inspector .text-slate-500 {
+  color: #9cabb8;
+}
+
+.nexus-shell.theme-dark .nexus-inspector > div > div:first-child > div:first-child {
+  color: #d3dce4;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar input,
+.nexus-shell.theme-dark .nexus-inspector input,
+.nexus-shell.theme-dark .nexus-inspector textarea,
+.nexus-shell.theme-dark .nexus-inspector select {
+  border-color: #465563;
+  background-color: #18222c;
+  color: #e3eaf0;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar input::placeholder {
+  color: #82909d;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar button[aria-expanded="true"] {
+  border-color: #705541;
+  background: #3c3028;
+  color: #f0c4a6;
+}
+
+.nexus-shell.theme-dark .nexus-sidebar button:hover,
+.nexus-shell.theme-dark .nexus-inspector button:hover {
+  border-color: #806048;
+  color: #f0b38b;
+}
+
+.nexus-shell.theme-dark .nexus-inspector > div:first-child {
+  border-color: #394754;
+  background: transparent;
+}
+
+.nexus-shell.theme-dark .nexus-inspector .bg-slate-950 {
+  border-color: #3b4956;
+  background: #19232d;
+}
+
+.nexus-shell.theme-dark .canvas-workspace {
+  border-color: #354351;
+  background: #171f29;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 20%);
+}
+
+.nexus-shell.theme-dark .canvas-workspace .nexus-canvas {
+  background: #171f29;
+}
+
+.nexus-shell.theme-dark .workspace-toolrail {
+  border-color: #3c4a57;
+  background: rgb(32 42 53 / 96%);
+  box-shadow: 0 5px 16px rgb(0 0 0 / 28%);
+}
+
+.nexus-shell.theme-dark .workspace-toolrail-label {
+  color: #a1afbb;
+}
+
+.nexus-shell.theme-dark .workspace-tool-button {
+  color: #c1ccd5;
+}
+
+.nexus-shell.theme-dark .workspace-tool-button:hover {
+  border-color: #705541;
+  background: #3c3028;
+  color: #f0b38b;
+}
+
+.nexus-shell.theme-dark .workspace-tool-button[aria-pressed="true"] {
+  border-color: #557a90;
+  background: #31536a;
+  color: #fff;
+}
+
+.nexus-shell.theme-dark .empty-canvas-card {
+  border-color: #465563;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(206 105 56 / 9%), transparent 42%),
+    rgb(32 42 53 / 97%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 32%), inset 0 1px rgb(255 255 255 / 4%);
+}
+
+.nexus-shell.theme-dark .empty-canvas-card h2,
+.nexus-shell.theme-dark .empty-canvas-card > div:last-child > div > span {
+  color: #e2e8ee;
+}
+
+.nexus-shell.theme-dark .empty-canvas-card p,
+.nexus-shell.theme-dark .empty-canvas-card > div:last-child > div {
+  color: #a4b0bb;
+}
+
+.nexus-shell.theme-dark .empty-canvas-card > div:last-child > div {
+  background: #293541;
+}
+
+.nexus-shell.theme-dark .nexus-breadcrumb {
+  border-color: #465563;
+  background: rgb(32 42 53 / 96%);
+}
+
+.nexus-shell.theme-dark .nexus-breadcrumb button {
+  color: #d0dbe4;
+}
+
+.nexus-shell.theme-dark .nexus-breadcrumb span {
+  color: #94a3b0;
+}
+
+.nexus-shell.theme-dark .nexus-statusbar {
+  border-color: #354351;
+  background: #1b2b39;
+  color: #c6d1da;
+}
+
+.nexus-shell.theme-dark .nexus-analysis {
+  border-color: #465563;
+  background: #202a35;
+  color: #d4dee7;
+}
+
+.nexus-shell.theme-dark .nexus-analysis > header {
+  border-color: #3a4855;
+  background: #26323e;
+}
+
+.nexus-shell.theme-dark .nexus-analysis .text-slate-100,
+.nexus-shell.theme-dark .nexus-analysis .text-slate-200,
+.nexus-shell.theme-dark .nexus-analysis .text-slate-300 {
+  color: #d5dee6;
+}
+
+.nexus-shell.theme-dark .nexus-analysis .text-slate-400,
+.nexus-shell.theme-dark .nexus-analysis .text-slate-500 {
+  color: #9cabb8;
+}
+
+.nexus-shell.theme-dark .nexus-analysis .bg-slate-950,
+.nexus-shell.theme-dark .nexus-analysis .bg-slate-900 {
+  background-color: #18222c;
+}
+
+.nexus-shell.theme-dark .nexus-analysis .bg-slate-800 {
+  background-color: #2b3743;
+}
+
+.nexus-shell.theme-dark .nexus-analysis .border-slate-700,
+.nexus-shell.theme-dark .nexus-analysis .border-slate-800 {
+  border-color: #3c4a57;
+}
+
+.nexus-shell.theme-dark .nexus-analysis-overlay {
+  background: rgb(4 9 14 / 62%);
+}
+
+.nexus-shell.theme-dark .nexus-tutorial {
+  border-color: #465563;
+  background: #202a35;
+  color: #e2e8ee;
+}
+
+.nexus-shell.theme-dark .nexus-tutorial .text-white,
+.nexus-shell.theme-dark .nexus-tutorial .text-slate-100,
+.nexus-shell.theme-dark .nexus-tutorial .text-slate-200,
+.nexus-shell.theme-dark .nexus-tutorial .text-slate-300 {
+  color: #e2e8ee;
+}
+
+.nexus-shell.theme-dark .nexus-tutorial .text-slate-400,
+.nexus-shell.theme-dark .nexus-tutorial .text-slate-500 {
+  color: #a1afbb;
+}
+
+.nexus-shell.theme-dark .nexus-tutorial .border-slate-800,
+.nexus-shell.theme-dark .nexus-tutorial .border-slate-700 {
+  border-color: #3c4a57;
+}
+
+.nexus-shell.theme-dark .nexus-tutorial-tip {
+  border-color: #3c4a57;
+  background: #293541;
+}
+
+.nexus-shell.theme-dark ::-webkit-scrollbar-track {
+  background: #18222c;
+}
+
+.nexus-shell.theme-dark ::-webkit-scrollbar-thumb {
+  background: #455563;
+}
+
+.nexus-shell.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: #697d8b;
 }

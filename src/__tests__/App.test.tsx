@@ -9,6 +9,7 @@ describe('App Layout', () => {
     useCircuitStore.getState().resetCircuit();
     useCircuitStore.setState({ zoom: 1, pan: { x: 0, y: 0 } });
     window.localStorage.setItem(FIRST_RUN_TUTORIAL_KEY, 'completed');
+    window.localStorage.removeItem('logdev-theme');
   });
 
   it('renders header, component sidebar, and canvas area', () => {
@@ -18,6 +19,21 @@ describe('App Layout', () => {
     expect(screen.getByText(/Ultimate/i)).toBeDefined();
     expect(screen.getByPlaceholderText(/Buscar componentes/i)).toBeDefined();
     expect(screen.getByText(/Portas Lógicas/i)).toBeDefined();
+  });
+
+  it('switches the full workspace theme and remembers the preference', () => {
+    render(<App />);
+    const workspace = document.querySelector('.nexus-shell');
+    expect(workspace).toHaveClass('theme-light');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ativar tema escuro' }));
+    expect(workspace).toHaveClass('theme-dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(window.localStorage.getItem('logdev-theme')).toBe('dark');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ativar tema claro' }));
+    expect(workspace).toHaveClass('theme-light');
+    expect(window.localStorage.getItem('logdev-theme')).toBe('light');
   });
 
   it('shows a skippable onboarding tutorial only on the first access', () => {

@@ -20,7 +20,11 @@ interface CanvasContextMenu {
   world: Point;
 }
 
-export const CircuitCanvas: React.FC = () => {
+interface CircuitCanvasProps {
+  theme: 'light' | 'dark';
+}
+
+export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({ theme }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const {
@@ -115,7 +119,7 @@ export const CircuitCanvas: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // 1. Draw Grid
-      renderGrid(ctx, canvas.width, canvas.height, pan, zoom);
+      renderGrid(ctx, canvas.width, canvas.height, pan, zoom, theme);
 
       ctx.save();
       ctx.translate(pan.x, pan.y);
@@ -201,7 +205,7 @@ export const CircuitCanvas: React.FC = () => {
     };
   }, [
     components, wires, selectedIds, pan, zoom, activeWireStart, currentMousePos,
-    simulator, isSimulating, isPanning, draggedCompIds, pendingComponentType, selectionRect,
+    simulator, isSimulating, isPanning, draggedCompIds, pendingComponentType, selectionRect, theme,
   ]);
 
   useEffect(() => {

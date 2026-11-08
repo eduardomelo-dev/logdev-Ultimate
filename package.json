@@ -1,7 +1,7 @@
 {
   "name": "logdev-ultimate",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "logdev-Ultimate - Modern Digital Logic CAD & Simulator",
   "desktopName": "logdev-Ultimate",
   "author": {

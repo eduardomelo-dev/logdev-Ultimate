@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Versão-1.2.0-64748b?style=for-the-badge" alt="Versão 1.2.0" />
+  <img src="https://img.shields.io/badge/Versão-1.3.0-64748b?style=for-the-badge" alt="Versão 1.3.0" />
   <img src="https://img.shields.io/badge/Plataformas-Linux%20%7C%20Windows%20%7C%20Web-38bdf8?style=for-the-badge" alt="Multiplataforma" />
   <img src="https://img.shields.io/badge/Licença-MIT-slate?style=for-the-badge" alt="Licença MIT" />
 </p>
@@ -18,9 +18,18 @@
 
 ## 📖 Visão Geral
 
-O **logdev-Ultimate** é uma recriação moderna, elegante e reativa de ferramentas clássicas de lógica digital (como Logisim Evolution). Projetado com uma interface dark inspirada em ferramentas profissionais como **Figma** e **VS Code**, o sistema combina um canvas gráfico de alto desempenho a 60 FPS com um motor de simulação discreta de 4 estados elétricos.
+O **logdev-Ultimate** é uma recriação moderna, elegante e reativa de ferramentas clássicas de lógica digital (como Logisim Evolution). O sistema combina uma bancada de trabalho redesenhada, temas claro e escuro, canvas gráfico de alto desempenho e motor de simulação discreta de 4 estados elétricos.
 
-Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linux (.rpm)** e **Windows (.exe)**. A versão 1.2.0 oferece uma interface mais neutra e reduz o JavaScript necessário na abertura inicial, mantendo os recursos de simulação e exportação.
+Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linux (.rpm)** e **Windows (.exe)**. A versão 1.3.0 reorganiza a interface sem remover as ferramentas existentes, permite alternar entre temas claro e escuro e mantém a inicialização otimizada da versão 1.2.0.
+
+### Versão 1.3.0 — Nova bancada e temas claro/escuro
+
+- **Layout redesenhado:** cabeçalho com contexto do projeto e comandos, biblioteca em painel de catálogo à esquerda, canvas central emoldurado e inspetor contextual à direita.
+- **Ferramentas de edição reposicionadas:** Selecionar, Conectar e Interagir ficam em uma barra vertical no canto superior direito do canvas.
+- **Tema claro/escuro completo:** alterne pelo botão no cabeçalho; a preferência fica salva para as próximas aberturas. Biblioteca, inspetor, análise, tutorial, menus e canvas acompanham o tema.
+- **Canvas adaptável:** fundo e grade ajustam o contraste conforme o tema, preservando as cores que indicam os sinais lógicos.
+- **Funções e marca preservadas:** simulação, edição, análise, importação, exportação e demais recursos permanecem disponíveis; a logo não foi alterada.
+- **Compatibilidade:** edição web, RPM para Linux x86_64 e instaladores Windows x64.
 
 ### Versão 1.2.0 — Interface clean e carregamento otimizado
 
@@ -33,11 +42,10 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Menu de contexto e clipboard:** clique com o botão direito sobre um elemento para recortar, copiar, colar ou excluir; `Ctrl+C`, `Ctrl+X`, `Ctrl+V` e `Delete` também funcionam. Fios entre os componentes copiados acompanham a cópia.
 - **Recursos preservados:** rotação, autosave e recuperação, diagnósticos, animação, Undo/Redo, busca, importação e exportação continuam disponíveis.
 
-### Próxima versão — em desenvolvimento
+### Recursos da bancada e do simulador
 
-- **Nova identidade Nexus:** símbolo vetorial original inspirado em trilhas de circuito, paleta índigo/ciano/violeta e acabamento unificado para cabeçalho, biblioteca, inspetor, análise e canvas.
 - **Tutorial de primeiro acesso:** guia em quatro etapas explica montagem, conexões, simulação e exportação; é possível avançar, voltar, pular ou fechar. A conclusão ou o pulo ficam salvos neste navegador e o tutorial automático não aparece novamente.
-- **Navegação guiada:** os controles ficam agrupados por edição, análise, simulação e projeto; o canvas vazio também apresenta um passo a passo para montar o primeiro circuito.
+- **Navegação guiada:** análise, simulação e ações do projeto ficam agrupadas no cabeçalho; as ferramentas de edição ficam na barra do canvas. O canvas vazio também apresenta um passo a passo para montar o primeiro circuito.
 - **Análise combinacional:** o botão **Analisar** gera a tabela-verdade, expressões booleanas minimizadas e mapas de Karnaugh a partir dos pinos de entrada, saídas e sondas conectados.
 - **Execução isolada:** cada combinação é simulada em uma instância temporária; a análise não altera entradas, estado ou execução do circuito aberto.
 - **Limites explícitos:** aceita circuitos de até 200 componentes e 8 entradas conectadas de 1 bit (256 combinações). Os mapas de Karnaugh são exibidos até 4 entradas; tabela e expressões continuam disponíveis até 8.
@@ -218,11 +226,11 @@ npm run electron:start
 ```bash
 npm run dist:linux
 ```
-> Gera `release/logdev-ultimate-1.2.0.x86_64.rpm`.
+> Gera `release/logdev-ultimate-1.3.0.x86_64.rpm`.
 
 Para instalar no Fedora/RHEL:
 ```bash
-sudo dnf install release/logdev-ultimate-1.2.0.x86_64.rpm
+sudo dnf install release/logdev-ultimate-1.3.0.x86_64.rpm
 ```
 
 ### Gerar instalador e executável para Windows (.exe)
@@ -230,22 +238,22 @@ sudo dnf install release/logdev-ultimate-1.2.0.x86_64.rpm
 npm run dist:win
 ```
 > Gera dois arquivos em `release/`:
-> 1. `release/logdev-Ultimate Setup 1.2.0.exe` (Instalador com assistente)
-> 2. `release/logdev-Ultimate 1.2.0.exe` (Versão portátil sem instalação)
+> 1. `release/logdev-Ultimate Setup 1.3.0.exe` (Instalador com assistente)
+> 2. `release/logdev-Ultimate 1.3.0.exe` (Versão portátil sem instalação)
 
 ---
 
-## 📥 Downloads Oficiais (Release v1.2.0)
+## 📥 Downloads Oficiais (Release v1.3.0)
 
-Os arquivos desta versão clean são publicados em uma release separada. As versões v1.0.0 e v1.1.0 permanecem disponíveis e inalteradas.
+Os arquivos desta versão ficam disponíveis na página da release. As versões v1.0.0, v1.1.0 e v1.2.0 permanecem disponíveis e inalteradas.
 
 | Sistema | Arquivo | Tamanho | Como Instalar |
 |---------|---------|---------|---------------|
-| **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.2.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-ultimate-1.2.0.x86_64.rpm) | A publicar | `sudo dnf install logdev-ultimate-1.2.0.x86_64.rpm` |
-| **Windows (Portable)** | [`logdev-Ultimate.1.2.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-Ultimate.1.2.0.exe) | A publicar | Clique duas vezes — executa sem instalação |
-| **Windows (Instalador)** | [`logdev-Ultimate.Setup.1.2.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.2.0/logdev-Ultimate.Setup.1.2.0.exe) | A publicar | Clique duas vezes e siga o assistente |
+| **Linux (Fedora/RHEL)** | [`logdev-ultimate-1.3.0.x86_64.rpm`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.3.0/logdev-ultimate-1.3.0.x86_64.rpm) | RPM x86_64 | `sudo dnf install logdev-ultimate-1.3.0.x86_64.rpm` |
+| **Windows (Portable)** | [`logdev-Ultimate.1.3.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.3.0/logdev-Ultimate.1.3.0.exe) | x64 | Clique duas vezes — executa sem instalação |
+| **Windows (Instalador)** | [`logdev-Ultimate.Setup.1.3.0.exe`](https://github.com/eduardomelo-dev/logdev-Ultimate/releases/download/v1.3.0/logdev-Ultimate.Setup.1.3.0.exe) | x64 | Clique duas vezes e siga o assistente |
 
-> 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.2.0
+> 📌 **Release page:** https://github.com/eduardomelo-dev/logdev-Ultimate/releases/tag/v1.3.0
 
 ## 📥 Downloads anteriores
 
