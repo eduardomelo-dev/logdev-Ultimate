@@ -1,6 +1,9 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
+// Set app name early for proper WM_CLASS on Linux
+app.setName('logdev-Ultimate');
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1360,
@@ -16,6 +19,11 @@ function createWindow() {
       contextIsolation: true,
     },
   });
+
+  // Set window icon explicitly for Linux/Wayland
+  if (process.platform === 'linux') {
+    win.setIcon(path.join(__dirname, '../build/icon.png'));
+  }
 
   Menu.setApplicationMenu(null);
 
