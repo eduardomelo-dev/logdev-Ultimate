@@ -38,7 +38,7 @@ export const Inspector: React.FC = () => {
 
   if (!selectedComp && !selectedWire) {
     return (
-      <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs text-slate-400 select-none">
+      <aside className="nexus-inspector w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs text-slate-400 select-none">
         <div className="flex items-center gap-2 text-slate-200 font-semibold mb-3 border-b border-slate-800 pb-2">
           <Info className="w-4 h-4 text-slate-400" />
           <span>Informações do Circuito</span>
@@ -78,7 +78,7 @@ export const Inspector: React.FC = () => {
   if (selectedWire) {
     const val = simulator.getPinValue(selectedWire.from.componentId, selectedWire.from.portId);
     return (
-      <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs select-none">
+      <aside className="nexus-inspector w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col overflow-y-auto text-xs select-none">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2 text-slate-200 font-semibold">
             <Settings className="w-4 h-4 text-slate-400" />
@@ -128,7 +128,7 @@ export const Inspector: React.FC = () => {
   ].includes(selectedComp.type);
 
   return (
-    <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col text-xs select-none">
+    <aside className="nexus-inspector w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col text-xs select-none">
       {/* Title */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <div className="flex items-center gap-2 text-slate-200 font-semibold">

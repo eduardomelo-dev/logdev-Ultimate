@@ -567,7 +567,7 @@ export const CircuitCanvas: React.FC = () => {
   const selectedWire = wires.find(wire => selectedIds.includes(wire.id));
 
   return (
-    <div className="relative w-full h-full overflow-hidden select-none bg-slate-900">
+    <div className="nexus-canvas relative w-full h-full overflow-hidden select-none bg-slate-900">
       <canvas
         ref={canvasRef}
         className={`w-full h-full block ${pendingComponentType ? 'cursor-crosshair' : 'cursor-default'}`}

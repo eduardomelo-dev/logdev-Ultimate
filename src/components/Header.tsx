@@ -18,7 +18,6 @@ import {
 import { useCircuitStore } from '../store/circuitStore';
 import { Simulator } from '../engine/simulator';
 import { parseCircuitData } from '../utils/circuitPersistence';
-import brandLogo from '../assets/brand-logo.jpg';
 
 function getProjectExportContext() {
   const state = useCircuitStore.getState();
@@ -120,20 +119,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
   return (
     <header className="app-header shrink-0 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
       {/* Brand & System Logo */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 overflow-hidden rounded-xl border border-slate-700 shadow-md shadow-cyan-950/30">
-          <img
-            src={brandLogo}
-            alt="Logdev Ultimate"
-            className="h-full w-full object-cover"
-          />
+      <div className="nexus-brand flex items-center gap-3">
+        <div className="nexus-brand-mark" role="img" aria-label="Logdev Ultimate">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M12 14h8v8h8v12h8" />
+            <path d="M20 22v-8h8" />
+            <circle cx="12" cy="14" r="3" />
+            <circle cx="28" cy="14" r="3" />
+            <circle cx="36" cy="34" r="3" />
+            <path d="M10 28h8v8h8" className="nexus-mark-secondary" />
+          </svg>
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-base tracking-wide bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+            <span className="nexus-wordmark font-extrabold text-base tracking-wide bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
               logdev
             </span>
-            <span className="text-[10px] bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
+            <span className="nexus-badge text-[10px] bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
               Ultimate
             </span>
           </div>

@@ -1,7 +1,7 @@
 # logdev-Ultimate ⚡
 
 <p align="center">
-  <img src="src/assets/brand-logo.jpg" alt="Logo do logdev-Ultimate" width="128" height="128" />
+  <img src="public/icon.svg" alt="Símbolo de circuito do logdev-Ultimate" width="128" height="128" />
   <br>
   <strong>Simulador de Circuitos Lógicos Digitais & CAD Moderno</strong>
   <br>
@@ -35,7 +35,9 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 
 ### Próxima versão — em desenvolvimento
 
-- **Navegação guiada:** a marca e as cores existentes são preservadas; os controles ficam agrupados por edição, análise, simulação e projeto, e o canvas vazio apresenta um passo a passo para montar o primeiro circuito.
+- **Nova identidade Nexus:** símbolo vetorial original inspirado em trilhas de circuito, paleta índigo/ciano/violeta e acabamento unificado para cabeçalho, biblioteca, inspetor, análise e canvas.
+- **Tutorial de primeiro acesso:** guia em quatro etapas explica montagem, conexões, simulação e exportação; é possível avançar, voltar, pular ou fechar. A conclusão ou o pulo ficam salvos neste navegador e o tutorial automático não aparece novamente.
+- **Navegação guiada:** os controles ficam agrupados por edição, análise, simulação e projeto; o canvas vazio também apresenta um passo a passo para montar o primeiro circuito.
 - **Análise combinacional:** o botão **Analisar** gera a tabela-verdade, expressões booleanas minimizadas e mapas de Karnaugh a partir dos pinos de entrada, saídas e sondas conectados.
 - **Execução isolada:** cada combinação é simulada em uma instância temporária; a análise não altera entradas, estado ou execução do circuito aberto.
 - **Limites explícitos:** aceita circuitos de até 200 componentes e 8 entradas conectadas de 1 bit (256 combinações). Os mapas de Karnaugh são exibidos até 4 entradas; tabela e expressões continuam disponíveis até 8.
@@ -128,11 +130,11 @@ logdev-studio/
 ├── electron/
 │   └── main.cjs                # Processo principal Electron (ciclo de vida e janela)
 ├── public/
-│   └── icon.png                # Favicon PNG
+│   ├── icon.svg                # Favicon vetorial da identidade Nexus
+│   └── icon.png                # Ícone PNG usado por integrações web
 ├── release/                    # Pacotes compilados instaláveis (.rpm, .exe)
 ├── src/
 │   ├── assets/
-│   │   └── brand-logo.jpg      # Imagem da marca usada na interface
 │   ├── App.tsx                 # Composição da interface React
 │   ├── main.tsx                # Entrada do renderer React
 │   ├── __tests__/              # Testes de integração de UI e circuitos de demonstração

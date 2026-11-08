@@ -5,11 +5,13 @@ import { Inspector } from './components/Inspector';
 import { LogicAnalyzer } from './components/LogicAnalyzer';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
+import { FirstRunTutorial, FIRST_RUN_TUTORIAL_KEY } from './components/FirstRunTutorial';
 import { useCircuitPersistence } from './hooks/useCircuitPersistence';
 import { useCircuitStore } from './store/circuitStore';
 
 export const App: React.FC = () => {
   const [isLogicAnalyzerOpen, setLogicAnalyzerOpen] = useState(false);
+  const [isFirstRunTutorialOpen, setFirstRunTutorialOpen] = useState(false);
   const persistenceStatus = useCircuitPersistence();
   const {
     isSimulating,
@@ -18,6 +20,15 @@ export const App: React.FC = () => {
     navigationStack,
     exitSubcircuit,
   } = useCircuitStore();
+
+  useEffect(() => {
+    try {
+      setFirstRunTutorialOpen(window.localStorage.getItem(FIRST_RUN_TUTORIAL_KEY) !== 'completed');
+    } catch (error) {
+      console.error('Não foi possível verificar se o tutorial inicial já foi exibido.', error);
+      setFirstRunTutorialOpen(true);
+    }
+  }, []);
 
   const navigateToDepth = (depth: number) => {
     for (let currentDepth = navigationStack.length; currentDepth > depth; currentDepth--) {
@@ -36,7 +47,7 @@ export const App: React.FC = () => {
   }, [isSimulating, clockFrequency, stepSimulation]);
 
   return (
-    <div className="flex flex-col w-screen h-screen min-w-0 overflow-hidden bg-slate-950 font-sans">
+    <div className="nexus-shell flex flex-col w-screen h-screen min-w-0 overflow-hidden bg-slate-950 font-sans">
       <Header onOpenLogicAnalyzer={() => setLogicAnalyzerOpen(true)} />
       <div className="flex-1 min-h-0 min-w-0 flex overflow-hidden relative">
         <Sidebar />
@@ -45,7 +56,7 @@ export const App: React.FC = () => {
           {navigationStack.length > 0 && (
             <nav
               aria-label="Navegação de subcircuitos"
-              className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-1 overflow-x-auto rounded-md border border-slate-700 bg-slate-950/95 px-2 py-1.5 text-xs shadow-lg"
+              className="nexus-breadcrumb absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-1 overflow-x-auto rounded-md border border-slate-700 bg-slate-950/95 px-2 py-1.5 text-xs shadow-lg"
             >
               <button
                 type="button"
@@ -86,6 +97,9 @@ export const App: React.FC = () => {
       <StatusBar persistenceStatus={persistenceStatus} />
       {isLogicAnalyzerOpen && (
         <LogicAnalyzer onClose={() => setLogicAnalyzerOpen(false)} />
+      )}
+      {isFirstRunTutorialOpen && (
+        <FirstRunTutorial onDismiss={() => setFirstRunTutorialOpen(false)} />
       )}
     </div>
   );

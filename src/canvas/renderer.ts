@@ -16,7 +16,7 @@ export function getLogicColor(val: LogicValue | undefined): string {
 
 export function renderGrid(ctx: CanvasRenderingContext2D, width: number, height: number, pan: Point, zoom: number) {
   ctx.save();
-  ctx.fillStyle = '#0f172a';
+  ctx.fillStyle = '#0a1120';
   ctx.fillRect(0, 0, width, height);
 
   ctx.translate(pan.x, pan.y);
@@ -27,7 +27,7 @@ export function renderGrid(ctx: CanvasRenderingContext2D, width: number, height:
   const endX = startX + (width / zoom) + GRID_SIZE * 2;
   const endY = startY + (height / zoom) + GRID_SIZE * 2;
 
-  ctx.fillStyle = '#334155';
+  ctx.fillStyle = '#30405f';
   for (let x = startX; x <= endX; x += GRID_SIZE) {
     for (let y = startY; y <= endY; y += GRID_SIZE) {
       ctx.beginPath();

@@ -13,7 +13,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ persistenceStatus }) => {
   const diagnostics = simulator.getDiagnostics();
 
   return (
-    <footer className="h-7 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none z-20">
+    <footer className="nexus-statusbar h-7 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none z-20">
       <div className="flex items-center gap-4">
         {/* Simulation state */}
         <div className="flex items-center gap-1.5">

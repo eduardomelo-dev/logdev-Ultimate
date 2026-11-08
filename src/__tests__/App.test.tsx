@@ -2,11 +2,13 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import App from '../App';
 import { useCircuitStore } from '../store/circuitStore';
+import { FIRST_RUN_TUTORIAL_KEY } from '../components/FirstRunTutorial';
 
 describe('App Layout', () => {
   beforeEach(() => {
     useCircuitStore.getState().resetCircuit();
     useCircuitStore.setState({ zoom: 1, pan: { x: 0, y: 0 } });
+    window.localStorage.setItem(FIRST_RUN_TUTORIAL_KEY, 'completed');
   });
 
   it('renders header, component sidebar, and canvas area', () => {
@@ -16,6 +18,20 @@ describe('App Layout', () => {
     expect(screen.getByText(/Ultimate/i)).toBeDefined();
     expect(screen.getByPlaceholderText(/Buscar componentes/i)).toBeDefined();
     expect(screen.getByText(/Portas Lógicas/i)).toBeDefined();
+  });
+
+  it('shows a skippable onboarding tutorial only on the first access', () => {
+    window.localStorage.removeItem(FIRST_RUN_TUTORIAL_KEY);
+    const firstVisit = render(<App />);
+
+    expect(screen.getByRole('dialog', { name: /Seu próximo circuito começa aqui/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Pular tutorial' }));
+    expect(screen.queryByRole('dialog', { name: /Seu próximo circuito começa aqui/i })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(FIRST_RUN_TUTORIAL_KEY)).toBe('completed');
+
+    firstVisit.unmount();
+    render(<App />);
+    expect(screen.queryByRole('dialog', { name: /Seu próximo circuito começa aqui/i })).not.toBeInTheDocument();
   });
 
   it('guides a new user through the first circuit and makes connect mode explicit', () => {

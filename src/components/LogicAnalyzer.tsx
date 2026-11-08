@@ -39,7 +39,7 @@ export const LogicAnalyzer: React.FC<LogicAnalyzerProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="nexus-analysis-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -48,7 +48,7 @@ export const LogicAnalyzer: React.FC<LogicAnalyzerProps> = ({ onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="logic-analyzer-title"
-        className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+        className="nexus-analysis flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 py-4">
           <div className="flex items-center gap-3">

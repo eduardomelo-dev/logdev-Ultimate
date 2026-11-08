@@ -12,7 +12,7 @@ function createWindow() {
     minHeight: 640,
     title: 'logdev-Ultimate',
     icon: path.join(__dirname, '../build/icon.png'),
-    backgroundColor: '#0b0f19',
+    backgroundColor: '#080d18',
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,

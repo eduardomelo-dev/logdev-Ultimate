@@ -57,7 +57,7 @@ export const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-r border-slate-800 flex flex-col z-10 select-none">
+    <aside className="nexus-sidebar w-64 shrink-0 min-h-0 bg-slate-900 border-r border-slate-800 flex flex-col z-10 select-none">
       {/* Search Bar */}
       <div className="shrink-0 p-3 border-b border-slate-800">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
