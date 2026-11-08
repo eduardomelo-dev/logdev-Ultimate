@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { ComponentInstance, Wire } from '../types/circuit';
+import { BitVector, ComponentInstance, Wire } from '../types/circuit';
 import { COMPONENT_METADATA } from '../engine/components';
 import { renderComponent, renderWire } from '../canvas/renderer';
 
@@ -15,8 +15,8 @@ export interface ExportOptions {
 export function renderCircuitToOffscreenCanvas(
   components: ComponentInstance[],
   wires: Wire[],
-  getPinValue: (compId: string, portId: string) => any,
-  getNetValue: (compId: string, portId: string) => any,
+  getPinValue: (compId: string, portId: string) => BitVector,
+  getNetValue: (compId: string, portId: string) => BitVector,
   options: ExportOptions = {}
 ): HTMLCanvasElement {
   const bgColor = options.backgroundColor || '#0b0f19';
@@ -128,8 +128,8 @@ export function renderCircuitToOffscreenCanvas(
 export function exportToJpeg(
   components: ComponentInstance[],
   wires: Wire[],
-  getPinValue: (compId: string, portId: string) => any,
-  getNetValue: (compId: string, portId: string) => any,
+  getPinValue: (compId: string, portId: string) => BitVector,
+  getNetValue: (compId: string, portId: string) => BitVector,
   filename = `circuito_logdev_${Date.now()}.jpg`
 ) {
   const canvas = renderCircuitToOffscreenCanvas(components, wires, getPinValue, getNetValue);
@@ -147,8 +147,8 @@ export function exportToJpeg(
 export function exportToPdf(
   components: ComponentInstance[],
   wires: Wire[],
-  getPinValue: (compId: string, portId: string) => any,
-  getNetValue: (compId: string, portId: string) => any,
+  getPinValue: (compId: string, portId: string) => BitVector,
+  getNetValue: (compId: string, portId: string) => BitVector,
   filename = `circuito_logdev_${Date.now()}.pdf`
 ) {
   const canvas = renderCircuitToOffscreenCanvas(components, wires, getPinValue, getNetValue);

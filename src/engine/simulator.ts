@@ -24,8 +24,6 @@ export class Simulator {
   // Max propagation iterations before detecting oscillation
   private readonly MAX_ITERATIONS = 50;
 
-  constructor() {}
-
   /**
    * Initializes and loads circuit components and wiring into the simulator.
    */

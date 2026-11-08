@@ -66,17 +66,26 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 
 A base de código está organizada sob padrões modulares de software:
 
+### Limites entre Electron e interface
+
+- `electron/` é o processo principal do desktop: controla o ciclo de vida da janela e carrega o frontend compilado em `dist/`.
+- `src/` é o frontend React/TypeScript. O motor de simulação em `src/engine/` é lógica de domínio executada no renderer; não há um servidor/API backend neste projeto.
+- O renderer não recebe acesso direto ao Node.js (`nodeIntegration: false` e `contextIsolation: true`). Como não há comunicação com funcionalidades nativas, não existe uma bridge/preload.
+- O empacotamento inclui `dist/`, `electron/` e `build/` (ícones usados pela janela); manter os ícones no pacote é necessário para a inicialização do app desktop.
+
 ```text
 logdev-studio/
 ├── build/                      # Ícones de alta resolução (.png, .ico)
 ├── dist/                       # Build estático otimizado gerado pelo Vite
 ├── electron/
-│   └── main.cjs                # Processo principal desktop (janela, menus nativos)
+│   └── main.cjs                # Processo principal Electron (ciclo de vida e janela)
 ├── public/
 │   ├── icon.svg                # Logotipo vetorial oficial
 │   └── icon.png                # Ícone em bitmap
 ├── release/                    # Pacotes compilados instaláveis (.rpm, .exe)
 ├── src/
+│   ├── App.tsx                 # Composição da interface React
+│   ├── main.tsx                # Entrada do renderer React
 │   ├── __tests__/              # Testes de integração de UI e circuitos de demonstração
 │   ├── canvas/
 │   │   ├── CircuitCanvas.tsx   # Controlador de eventos (pan, zoom, drag, click, poke)

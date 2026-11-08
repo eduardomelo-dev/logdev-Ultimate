@@ -2,6 +2,17 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderCircuitToOffscreenCanvas, exportToJpeg, exportToPdf } from '../exportUtils';
 import { ComponentInstance, Wire } from '../../types/circuit';
 
+const { savePdf } = vi.hoisted(() => ({ savePdf: vi.fn() }));
+
+vi.mock('jspdf', () => ({
+  default: class {
+    setFillColor = vi.fn();
+    rect = vi.fn();
+    addImage = vi.fn();
+    save = savePdf;
+  },
+}));
+
 describe('Export Utils (PDF & JPEG)', () => {
   const dummyComponents: ComponentInstance[] = [
     { id: 'pin1', type: 'PIN_INPUT', x: 100, y: 100, state: { value: ['1'] } },
@@ -43,5 +54,6 @@ describe('Export Utils (PDF & JPEG)', () => {
     expect(() => {
       exportToPdf(dummyComponents, dummyWires, () => ['1'], () => ['1'], 'test.pdf');
     }).not.toThrow();
+    expect(savePdf).toHaveBeenCalledWith('test.pdf');
   });
 });
