@@ -102,7 +102,11 @@ export const Inspector: React.FC = () => {
 
   const meta = COMPONENT_METADATA[selectedComp.type];
   const isGateWithInputs = ['AND', 'OR', 'NAND', 'NOR', 'XOR', 'XNOR'].includes(selectedComp.type);
-  const isBusComponent = ['PIN_INPUT', 'PIN_OUTPUT', 'REGISTER', 'CONSTANT'].includes(selectedComp.type);
+  const isConfigurablePlexer = selectedComp.type === 'MULTIPLEXER' || selectedComp.type === 'DEMULTIPLEXER';
+  const isConfigurableWidthComponent = [
+    'PIN_INPUT', 'PIN_OUTPUT', 'REGISTER', 'CONSTANT', 'ADDER', 'SPLITTER',
+    'DECODER', 'PRIORITY_ENCODER', 'MULTIPLEXER', 'DEMULTIPLEXER',
+  ].includes(selectedComp.type);
 
   return (
     <aside className="w-64 shrink-0 min-h-0 bg-slate-900 border-l border-slate-800 p-4 flex flex-col text-xs select-none">
@@ -143,18 +147,18 @@ export const Inspector: React.FC = () => {
         </div>
 
         {/* Number of inputs (if Gate) */}
-        {isGateWithInputs && (
+        {(isGateWithInputs || isConfigurablePlexer) && (
           <div>
             <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
               <Hash className="w-3.5 h-3.5 text-slate-400" />
-              <span>Número de Entradas</span>
+              <span>{selectedComp.type === 'DEMULTIPLEXER' ? 'Número de Saídas' : 'Número de Entradas'}</span>
             </label>
             <select
               value={selectedComp.inputs || 2}
               onChange={(e) => updateComponent(selectedComp.id, { inputs: Number(e.target.value) })}
               className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
             >
-              {[2, 3, 4, 5, 6, 8].map((n) => (
+              {(isConfigurablePlexer ? [2, 4, 8] : [2, 3, 4, 5, 6, 8]).map((n) => (
                 <option key={n} value={n}>
                   {n} entradas
                 </option>
@@ -165,18 +169,35 @@ export const Inspector: React.FC = () => {
         )}
 
         {/* Bit width (if Bus) */}
-        {isBusComponent && (
+        {isConfigurableWidthComponent && (
           <div>
             <label className="text-slate-400 font-medium mb-1 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-slate-400" />
-              <span>Largura de Bits</span>
+              <span>
+                {selectedComp.type === 'DECODER'
+                  ? 'Bits de Endereço'
+                  : selectedComp.type === 'PRIORITY_ENCODER'
+                    ? 'Linhas de Entrada'
+                    : isConfigurablePlexer
+                      ? 'Largura dos Dados'
+                    : selectedComp.type === 'SPLITTER'
+                      ? 'Largura do Barramento'
+                      : 'Largura de Bits'}
+              </span>
             </label>
             <select
-              value={selectedComp.bitWidth || 1}
+              value={['SPLITTER', 'PRIORITY_ENCODER'].includes(selectedComp.type)
+                ? Math.max(2, selectedComp.bitWidth ?? (selectedComp.type === 'SPLITTER' ? 2 : 4))
+                : selectedComp.type === 'DECODER'
+                  ? Math.max(1, selectedComp.bitWidth ?? 2)
+                  : selectedComp.bitWidth || 1}
               onChange={(e) => updateComponent(selectedComp.id, { bitWidth: Number(e.target.value) })}
               className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-slate-500"
             >
-              {[1, 2, 4, 8, 16, 32].map((w) => (
+              {(selectedComp.type === 'SPLITTER' || selectedComp.type === 'PRIORITY_ENCODER'
+                ? [2, 4, 8, 16, 32]
+                : selectedComp.type === 'DECODER' ? [1, 2, 3, 4, 5] : [1, 2, 4, 8, 16, 32]
+              ).map((w) => (
                 <option key={w} value={w}>
                   {w} {w === 1 ? 'bit' : 'bits'}
                 </option>

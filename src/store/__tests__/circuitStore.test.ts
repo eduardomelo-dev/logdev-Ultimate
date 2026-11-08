@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCircuitStore } from '../circuitStore';
 import { getPortWorldPosition } from '../../engine/componentGeometry';
+import { parseCircuitData } from '../../utils/circuitPersistence';
 
 describe('Circuit Store', () => {
   beforeEach(() => {
@@ -38,6 +39,18 @@ describe('Circuit Store', () => {
     expect(useCircuitStore.getState().wires.length).toBe(0);
   });
 
+  it('inserts a junction as an undoable component at the exact wire coordinate', () => {
+    const store = useCircuitStore.getState();
+    const junction = store.addJunctionAt({ x: 73, y: 58 });
+
+    expect(junction).toMatchObject({ type: 'JUNCTION', x: 63, y: 48 });
+    expect(getPortWorldPosition(junction, 'node')).toEqual({ x: 73, y: 58 });
+    useCircuitStore.getState().undo();
+    expect(useCircuitStore.getState().components).toHaveLength(0);
+    useCircuitStore.getState().redo();
+    expect(useCircuitStore.getState().components[0].type).toBe('JUNCTION');
+  });
+
   it('toggles input pin value in poke mode and steps simulation', () => {
     const store = useCircuitStore.getState();
     const pin = store.addComponent('PIN_INPUT', 0, 0);
@@ -46,6 +59,69 @@ describe('Circuit Store', () => {
     store.togglePinValue(pin.id);
     const updated = useCircuitStore.getState().components.find(c => c.id === pin.id);
     expect(updated?.state?.value).toEqual(['1']);
+  });
+
+  it('records only selected signals and bounds chronogram history', () => {
+    const store = useCircuitStore.getState();
+    store.loadCircuit({
+      components: [
+        { id: 'input', type: 'PIN_INPUT', x: 0, y: 0, state: { value: ['1'] } },
+        { id: 'output', type: 'PIN_OUTPUT', x: 80, y: 0 },
+      ],
+      wires: [{
+        id: 'wire',
+        from: { componentId: 'input', portId: 'out' },
+        to: { componentId: 'output', portId: 'in' },
+        points: [],
+      }],
+    });
+    useCircuitStore.getState().setTracedSignals([{ componentId: 'input', portId: 'out' }]);
+
+    expect(useCircuitStore.getState().signalHistory).toHaveLength(1);
+    for (let tick = 0; tick < 305; tick++) {
+      useCircuitStore.getState().stepSimulation();
+    }
+
+    const state = useCircuitStore.getState();
+    expect(state.signalHistory).toHaveLength(300);
+    expect(state.signalHistory[0].tick).toBe(6);
+    expect(state.signalHistory[state.signalHistory.length - 1].tick).toBe(305);
+    expect(Object.keys(state.signalHistory[0].values)).toEqual(['input:out']);
+  });
+
+  it('edits a subcircuit in isolation and keeps the root project updated', () => {
+    const store = useCircuitStore.getState();
+    store.loadCircuit({
+      components: [{
+        id: 'module',
+        type: 'SUBCIRCUIT',
+        x: 0,
+        y: 0,
+        label: 'Módulo',
+        subcircuit: {
+          name: 'Módulo',
+          circuit: {
+            components: [{ id: 'gate', type: 'AND', x: 40, y: 40, label: 'AND original' }],
+            wires: [],
+          },
+          ports: [],
+        },
+      }],
+      wires: [],
+    });
+
+    useCircuitStore.getState().enterSubcircuit('module');
+    expect(useCircuitStore.getState().components.map(component => component.id)).toEqual(['gate']);
+    useCircuitStore.getState().updateComponent('gate', { label: 'AND editado' });
+
+    const projectWhileEditing = useCircuitStore.getState().getProjectCircuit();
+    expect(projectWhileEditing.components[0].subcircuit?.circuit.components[0].label)
+      .toBe('AND editado');
+
+    useCircuitStore.getState().exitSubcircuit();
+    expect(useCircuitStore.getState().components.map(component => component.id)).toEqual(['module']);
+    expect(useCircuitStore.getState().components[0].subcircuit?.circuit.components[0].label)
+      .toBe('AND editado');
   });
 
   it('rotates a connected component, keeps the wire attached, and undoes the rotation', () => {
@@ -72,6 +148,52 @@ describe('Circuit Store', () => {
     expect(restoredGate.direction).toBe('EAST');
     expect(undone.wires[0].points[undone.wires[0].points.length - 1])
       .toEqual(getPortWorldPosition(restoredGate, 'in0'));
+  });
+
+  it('reroutes connections when a configurable gate changes its port layout', () => {
+    const store = useCircuitStore.getState();
+    const inputA = store.addComponent('PIN_INPUT', 0, 0);
+    const inputB = store.addComponent('PIN_INPUT', 0, 80);
+    const gate = store.addComponent('AND', 120, 20);
+    store.addWire(
+      { componentId: inputA.id, portId: 'out' },
+      { componentId: gate.id, portId: 'in0' },
+      [{ x: 40, y: 20 }, { x: 120, y: 37 }]
+    );
+    store.addWire(
+      { componentId: inputB.id, portId: 'out' },
+      { componentId: gate.id, portId: 'in1' },
+      [{ x: 40, y: 100 }, { x: 120, y: 53 }]
+    );
+
+    useCircuitStore.getState().updateComponent(gate.id, { inputs: 3 });
+    const state = useCircuitStore.getState();
+    const updatedGate = state.components.find(component => component.id === gate.id)!;
+    expect(state.wires[0].points[state.wires[0].points.length - 1])
+      .toEqual(getPortWorldPosition(updatedGate, 'in0'));
+    expect(state.wires[1].points[state.wires[1].points.length - 1])
+      .toEqual(getPortWorldPosition(updatedGate, 'in1'));
+  });
+
+  it('removes wires to ports that disappear when a multiplexer is reduced', () => {
+    const store = useCircuitStore.getState();
+    const mux = store.addComponent('MULTIPLEXER', 120, 40);
+    const source = useCircuitStore.getState().addComponent('PIN_INPUT', 0, 40);
+    useCircuitStore.getState().updateComponent(mux.id, { inputs: 4 });
+    useCircuitStore.getState().addWire(
+      { componentId: source.id, portId: 'out' },
+      { componentId: mux.id, portId: 'in3' },
+      [{ x: 40, y: 60 }, { x: 120, y: 100 }]
+    );
+    expect(useCircuitStore.getState().wires).toHaveLength(1);
+
+    useCircuitStore.getState().updateComponent(mux.id, { inputs: 2 });
+    const circuit = {
+      components: useCircuitStore.getState().components,
+      wires: useCircuitStore.getState().wires,
+    };
+    expect(circuit.wires).toHaveLength(0);
+    expect(() => parseCircuitData(circuit)).not.toThrow();
   });
 
   it('pastes selected components and their internal wires as one undoable edit', () => {

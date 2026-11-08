@@ -1,5 +1,5 @@
 import { COMPONENT_METADATA } from '../engine/components';
-import { getComponentDimensions, getOrientedPort, getRotationAngle } from '../engine/componentGeometry';
+import { getBaseComponentDimensions, getComponentDimensions, getOrientedPort, getRotationAngle } from '../engine/componentGeometry';
 import { BitVector, ComponentInstance, LogicValue, Point, Port, Wire } from '../types/circuit';
 
 export const GRID_SIZE = 20;
@@ -110,21 +110,25 @@ export function renderComponent(
   getPinValue: (compId: string, portId: string) => BitVector,
   monochrome = false
 ) {
-  const meta = COMPONENT_METADATA[comp.type];
-  if (!meta) return;
+  const componentMeta = COMPONENT_METADATA[comp.type];
+  if (!componentMeta) return;
+  const baseDimensions = getBaseComponentDimensions(comp);
   const dimensions = getComponentDimensions(comp);
+  const width = baseDimensions.width;
+  const height = baseDimensions.height;
+  const meta = { ...componentMeta, width, height };
 
   ctx.save();
   ctx.translate(comp.x + dimensions.width / 2, comp.y + dimensions.height / 2);
   ctx.rotate(getRotationAngle(comp.direction));
-  ctx.translate(-meta.width / 2, -meta.height / 2);
+  ctx.translate(-width / 2, -height / 2);
 
   // Selection outline
   if (isSelected) {
     ctx.strokeStyle = monochrome ? '#111827' : '#38bdf8';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
-    ctx.strokeRect(-6, -6, meta.width + 12, meta.height + 12);
+    ctx.strokeRect(-6, -6, width + 12, height + 12);
     ctx.setLineDash([]);
   }
 
@@ -253,6 +257,25 @@ export function renderComponent(
       break;
     }
 
+    case 'JUNCTION': {
+      const value = getPinValue(comp.id, 'node')[0] || 'Z';
+      ctx.beginPath();
+      ctx.arc(meta.width / 2, meta.height / 2, 7, 0, Math.PI * 2);
+      ctx.fillStyle = monochrome ? '#111827' : getLogicColor(value);
+      ctx.fill();
+      ctx.strokeStyle = monochrome ? '#111827' : '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      if (isSelected) {
+        ctx.beginPath();
+        ctx.arc(meta.width / 2, meta.height / 2, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = monochrome ? '#111827' : '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      break;
+    }
+
     case 'CLOCK': {
       const val = comp.state?.value?.[0] || '0';
       ctx.beginPath();
@@ -364,6 +387,32 @@ export function renderComponent(
       break;
     }
 
+    case 'SUBCIRCUIT': {
+      ctx.beginPath();
+      ctx.roundRect(0, 0, width, height, 8);
+      ctx.fillStyle = monochrome ? '#ffffff' : '#172554';
+      ctx.fill();
+      ctx.strokeStyle = monochrome ? '#111827' : '#60a5fa';
+      ctx.stroke();
+
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = monochrome ? '#111827' : '#dbeafe';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(comp.label || comp.subcircuit?.name || 'Subcircuito', width / 2, height / 2);
+
+      ctx.font = '9px sans-serif';
+      for (const port of meta.getPorts(comp.inputs, comp.bitWidth, comp)) {
+        ctx.textAlign = port.type === 'in' ? 'left' : 'right';
+        ctx.fillText(
+          port.name,
+          port.type === 'in' ? 8 : width - 8,
+          port.relY + (port.relY < height / 2 ? 10 : -10)
+        );
+      }
+      break;
+    }
+
     default: {
       // Standard Box for registers, flip flops, plexers
       ctx.beginPath();
@@ -381,7 +430,7 @@ export function renderComponent(
   }
 
   // Draw ports
-  const ports = meta.getPorts(comp.inputs, comp.bitWidth);
+  const ports = meta.getPorts(comp.inputs, comp.bitWidth, comp);
   for (const p of ports) {
     const pVal = getPinValue(comp.id, p.id)[0] || 'Z';
     const portColor = monochrome ? '#111827' : getLogicColor(pVal);
@@ -421,7 +470,7 @@ export function hitTestPort(
   const meta = COMPONENT_METADATA[comp.type];
   if (!meta) return null;
 
-  const ports = meta.getPorts(comp.inputs, comp.bitWidth)
+  const ports = meta.getPorts(comp.inputs, comp.bitWidth, comp)
     .map(port => getOrientedPort(comp, port.id))
     .filter((port): port is Port => port !== undefined);
   for (const p of ports) {

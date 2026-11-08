@@ -36,4 +36,40 @@ describe('Circuit autosave hook', () => {
     });
     recoveredMount.unmount();
   });
+
+  it('autosaves edits made inside a subcircuit to the root project', async () => {
+    act(() => {
+      useCircuitStore.getState().loadCircuit({
+        components: [{
+          id: 'module',
+          type: 'SUBCIRCUIT',
+          x: 0,
+          y: 0,
+          subcircuit: {
+            name: 'Módulo',
+            circuit: {
+              components: [{ id: 'gate', type: 'AND', x: 40, y: 40, label: 'Original' }],
+              wires: [],
+            },
+            ports: [],
+          },
+        }],
+        wires: [],
+      });
+    });
+
+    const mounted = renderHook(() => useCircuitPersistence());
+    await waitFor(() => expect(mounted.result.current).not.toBe('loading'));
+    act(() => {
+      useCircuitStore.getState().enterSubcircuit('module');
+      useCircuitStore.getState().updateComponent('gate', { label: 'Salvo no projeto' });
+    });
+
+    await waitFor(() => {
+      const saved = window.localStorage.getItem(AUTOSAVE_STORAGE_KEY);
+      expect(JSON.parse(saved!).circuit.components[0].subcircuit.circuit.components[0].label)
+        .toBe('Salvo no projeto');
+    }, { timeout: 2000 });
+    mounted.unmount();
+  });
 });

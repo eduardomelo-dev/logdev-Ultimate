@@ -33,28 +33,33 @@ export type GateType =
 /**
  * Categorization used in the component library palette.
  */
-export type ComponentCategory = 'wiring' | 'gates' | 'plexers' | 'memory' | 'io';
+export type ComponentCategory = 'wiring' | 'gates' | 'arithmetic' | 'plexers' | 'memory' | 'io';
 
 /**
  * Comprehensive list of supported digital circuit primitives.
  */
 export type ComponentType = 
   | GateType
+  | 'ADDER'
   | 'PIN_INPUT'
   | 'PIN_OUTPUT'
   | 'CLOCK'
   | 'CONSTANT'
   | 'PROBE'
   | 'SPLITTER'
+  | 'JUNCTION'
   | 'MULTIPLEXER'
   | 'DEMULTIPLEXER'
+  | 'DECODER'
+  | 'PRIORITY_ENCODER'
   | 'D_FLIP_FLOP'
   | 'REGISTER'
   | 'BUTTON'
   | 'SWITCH'
   | 'LED'
   | 'SEVEN_SEGMENT'
-  | 'HEX_DISPLAY';
+  | 'HEX_DISPLAY'
+  | 'SUBCIRCUIT';
 
 /**
  * Cardinal orientation for component placement and rendering on the canvas.
@@ -101,6 +106,8 @@ export interface ComponentInstance {
   inputs?: number;
   /** Runtime state dictionary (values, flip-flop memory cells, toggle switches) */
   state?: Record<string, any>;
+  /** Reusable child circuit definition for SUBCIRCUIT instances */
+  subcircuit?: SubcircuitDefinition;
 }
 
 /**
@@ -141,6 +148,25 @@ export interface Wire {
 export interface CircuitState {
   components: ComponentInstance[];
   wires: Wire[];
+}
+
+export interface SubcircuitPort {
+  id: string;
+  name: string;
+  direction: 'in' | 'out';
+  bitWidth: number;
+  pinComponentId: string;
+}
+
+export interface SubcircuitDefinition {
+  name: string;
+  circuit: CircuitState;
+  ports: SubcircuitPort[];
+}
+
+export interface SignalTraceSample {
+  tick: number;
+  values: Record<string, BitVector>;
 }
 
 export interface SimulationDiagnostic {

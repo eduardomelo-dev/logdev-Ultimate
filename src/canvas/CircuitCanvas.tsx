@@ -12,7 +12,7 @@ import {
   renderWire
 } from './renderer';
 import { getMarqueeSelectedIds } from './selection';
-import { hitTestWire, routeOrthogonalWire } from './wireRouter';
+import { getClosestPointOnWire, hitTestWire, routeOrthogonalWire } from './wireRouter';
 
 interface CanvasContextMenu {
   x: number;
@@ -42,9 +42,12 @@ export const CircuitCanvas: React.FC = () => {
     setPendingComponentType,
     setSelectedIds,
     addWire,
+    addJunctionAt,
     togglePinValue,
     addComponent,
     removeSelected,
+    createSubcircuitFromSelection,
+    enterSubcircuit,
     undo,
     redo,
   } = useCircuitStore();
@@ -124,7 +127,7 @@ export const CircuitCanvas: React.FC = () => {
         const isSelected = selectedIds.includes(w.id);
         const fromComponent = components.find(component => component.id === w.from.componentId);
         const fromPort = fromComponent && COMPONENT_METADATA[fromComponent.type]
-          .getPorts(fromComponent.inputs, fromComponent.bitWidth)
+          .getPorts(fromComponent.inputs, fromComponent.bitWidth, fromComponent)
           .find(port => port.id === w.from.portId);
         renderWire(
           ctx,
@@ -201,12 +204,19 @@ export const CircuitCanvas: React.FC = () => {
     simulator, isSimulating, isPanning, draggedCompIds, pendingComponentType, selectionRect,
   ]);
 
-  // Mouse Wheel (Zoom)
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom((prev) => Math.max(0.3, Math.min(2.5, prev * zoomFactor)));
-  };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
+      setZoom(previous => Math.max(0.3, Math.min(2.5, previous * zoomFactor)));
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, [setZoom]);
 
   // Mouse Down
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -468,6 +478,18 @@ export const CircuitCanvas: React.FC = () => {
     setContextMenu({ x, y, world });
   };
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+    const component = [...components].reverse().find(item => hitTestComponent(item, world));
+    if (component?.type === 'SUBCIRCUIT' && component.subcircuit) {
+      enterSubcircuit(component.id);
+      setContextMenu(null);
+    }
+  };
+
   useEffect(() => {
     if (!contextMenu) return;
     const dismissMenu = (event: MouseEvent) => {
@@ -539,18 +561,22 @@ export const CircuitCanvas: React.FC = () => {
   ]);
 
   const hasSelectedComponents = components.some(component => selectedIds.includes(component.id));
+  const selectedSubcircuit = components.find(component =>
+    selectedIds.includes(component.id) && component.type === 'SUBCIRCUIT' && component.subcircuit
+  );
+  const selectedWire = wires.find(wire => selectedIds.includes(wire.id));
 
   return (
     <div className="relative w-full h-full overflow-hidden select-none bg-slate-900">
       <canvas
         ref={canvasRef}
         className={`w-full h-full block ${pendingComponentType ? 'cursor-crosshair' : 'cursor-default'}`}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onContextMenu={handleContextMenu}
+        onDoubleClick={handleDoubleClick}
       />
       {contextMenu && (
         <div
@@ -560,7 +586,7 @@ export const CircuitCanvas: React.FC = () => {
           className="absolute z-30 min-w-40 rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl"
           style={{
             left: Math.min(contextMenu.x, Math.max(0, (canvasRef.current?.clientWidth ?? 200) - 164)),
-            top: Math.min(contextMenu.y, Math.max(0, (canvasRef.current?.clientHeight ?? 200) - 168)),
+            top: Math.min(contextMenu.y, Math.max(0, (canvasRef.current?.clientHeight ?? 200) - 268)),
           }}
           onMouseDown={(event) => event.stopPropagation()}
         >
@@ -581,6 +607,54 @@ export const CircuitCanvas: React.FC = () => {
             className="w-full rounded px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Copiar <span className="float-right text-slate-500">Ctrl+C</span>
+          </button>
+          {selectedSubcircuit && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                enterSubcircuit(selectedSubcircuit.id);
+                setContextMenu(null);
+              }}
+              className="w-full rounded px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800"
+            >
+              Editar subcircuito
+            </button>
+          )}
+          {selectedWire && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                const junctionPoint = getClosestPointOnWire(selectedWire, contextMenu.world);
+                if (!junctionPoint) {
+                  alert('Não foi possível localizar o ponto do fio para inserir a junção.');
+                } else {
+                  addJunctionAt(junctionPoint);
+                }
+                setContextMenu(null);
+              }}
+              className="w-full rounded px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800"
+            >
+              Inserir junção e criar ramificação
+            </button>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            disabled={!hasSelectedComponents}
+            onClick={() => {
+              try {
+                createSubcircuitFromSelection();
+              } catch (error) {
+                const message = error instanceof Error ? error.message : 'Erro inesperado.';
+                alert(`Não foi possível criar o subcircuito: ${message}`);
+              }
+              setContextMenu(null);
+            }}
+            className="w-full rounded px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Criar subcircuito
           </button>
           <button
             type="button"

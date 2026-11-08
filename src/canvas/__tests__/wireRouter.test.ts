@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { routeOrthogonalWire, hitTestWire } from '../wireRouter';
+import { getClosestPointOnWire, routeOrthogonalWire, hitTestWire } from '../wireRouter';
 
 describe('Wire Router', () => {
   it('creates clean orthogonal path between two offset points', () => {
@@ -37,5 +37,17 @@ describe('Wire Router', () => {
     };
     expect(hitTestWire(wire, { x: 50, y: 12 }, 5)).toBe(true);
     expect(hitTestWire(wire, { x: 50, y: 30 }, 5)).toBe(false);
+  });
+
+  it('projects junction placement onto the nearest wire segment', () => {
+    const wire = {
+      id: 'wire',
+      from: { componentId: 'a', portId: 'out' },
+      to: { componentId: 'b', portId: 'in' },
+      points: [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }],
+    };
+
+    expect(getClosestPointOnWire(wire, { x: 42, y: 3 })).toEqual({ x: 42, y: 0 });
+    expect(getClosestPointOnWire(wire, { x: 108, y: 18 })).toEqual({ x: 100, y: 18 });
   });
 });

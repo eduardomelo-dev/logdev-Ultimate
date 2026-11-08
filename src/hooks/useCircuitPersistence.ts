@@ -7,6 +7,9 @@ export type PersistenceStatus = 'loading' | 'saved' | 'saving' | 'recovered' | '
 export function useCircuitPersistence(): PersistenceStatus {
   const components = useCircuitStore(state => state.components);
   const wires = useCircuitStore(state => state.wires);
+  const navigationStack = useCircuitStore(state => state.navigationStack);
+  const projectComponents = navigationStack[0]?.parentComponents ?? components;
+  const projectWires = navigationStack[0]?.parentWires ?? wires;
   const [hydrated, setHydrated] = useState(false);
   const [status, setStatus] = useState<PersistenceStatus>('loading');
   const savedSnapshot = useRef<string | null>(null);
@@ -22,13 +25,14 @@ export function useCircuitPersistence(): PersistenceStatus {
         setStatus('recovered');
       } else {
         const current = useCircuitStore.getState();
-        savedSnapshot.current = JSON.stringify({ components: current.components, wires: current.wires });
+        const project = current.getProjectCircuit();
+        savedSnapshot.current = JSON.stringify(project);
         setStatus('saved');
       }
     } catch (error) {
       console.error('Não foi possível recuperar o autosave do circuito.', error);
       const current = useCircuitStore.getState();
-      savedSnapshot.current = JSON.stringify({ components: current.components, wires: current.wires });
+      savedSnapshot.current = JSON.stringify(current.getProjectCircuit());
       setStatus('error');
     } finally {
       setHydrated(true);
@@ -37,18 +41,19 @@ export function useCircuitPersistence(): PersistenceStatus {
 
   useEffect(() => {
     if (!hydrated) return;
-    const snapshot = JSON.stringify({ components, wires });
+    const snapshot = JSON.stringify({ components: projectComponents, wires: projectWires });
     if (snapshot === savedSnapshot.current) return;
     if (pendingSince.current === null) pendingSince.current = Date.now();
 
     const save = () => {
       pendingSince.current = null;
       const latest = useCircuitStore.getState();
-      const latestSnapshot = JSON.stringify({ components: latest.components, wires: latest.wires });
+      const project = latest.getProjectCircuit();
+      const latestSnapshot = JSON.stringify(project);
       try {
         window.localStorage.setItem(
           AUTOSAVE_STORAGE_KEY,
-          serializeCircuitData({ components: latest.components, wires: latest.wires })
+          serializeCircuitData(project)
         );
         savedSnapshot.current = latestSnapshot;
         setStatus('saved');
@@ -69,7 +74,7 @@ export function useCircuitPersistence(): PersistenceStatus {
       try {
         window.localStorage.setItem(
           AUTOSAVE_STORAGE_KEY,
-          serializeCircuitData({ components: latest.components, wires: latest.wires })
+          serializeCircuitData(latest.getProjectCircuit())
         );
       } catch (error) {
         console.error('Não foi possível salvar o circuito ao fechar o aplicativo.', error);
@@ -80,7 +85,7 @@ export function useCircuitPersistence(): PersistenceStatus {
       window.clearTimeout(timeout);
       window.removeEventListener('pagehide', saveLatestOnClose);
     };
-  }, [components, hydrated, wires]);
+  }, [hydrated, projectComponents, projectWires]);
 
   return status;
 }

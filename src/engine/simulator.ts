@@ -1,5 +1,6 @@
 import { BitVector, ComponentInstance, LogicValue, SimulationDiagnostic, Wire } from '../types/circuit';
 import { COMPONENT_METADATA } from './components';
+import { getPortWorldPosition } from './componentGeometry';
 import { evaluateGate, resolveBus } from './logic';
 
 /**
@@ -14,6 +15,7 @@ import { evaluateGate, resolveBus } from './logic';
  */
 export class Simulator {
   private components: Map<string, ComponentInstance> = new Map();
+  private subcircuitSimulators: Map<string, Simulator> = new Map();
   private wires: Wire[] = [];
   // Store values per component:portId -> BitVector
   private pinValues: Map<string, BitVector> = new Map();
@@ -30,37 +32,52 @@ export class Simulator {
    */
   public setCircuit(components: ComponentInstance[], wires: Wire[]) {
     this.components.clear();
+    this.subcircuitSimulators.clear();
     for (const c of components) {
-      this.components.set(c.id, { ...c });
+      this.components.set(c.id, {
+        ...c,
+        state: c.state ? { ...c.state } : undefined,
+      });
+      if (c.type === 'SUBCIRCUIT' && c.subcircuit) {
+        const childSimulator = new Simulator();
+        childSimulator.setCircuit(c.subcircuit.circuit.components, c.subcircuit.circuit.wires);
+        childSimulator.step();
+        childSimulator.step();
+        this.subcircuitSimulators.set(c.id, childSimulator);
+      }
     }
     this.wires = [...wires];
 
     // Clean up stale pin values
     const validKeys = new Set<string>();
+    const validSequentialIds = new Set(
+      components
+        .filter(component => component.type === 'D_FLIP_FLOP' || component.type === 'REGISTER')
+        .map(component => component.id)
+    );
 
     for (const c of components) {
       const meta = COMPONENT_METADATA[c.type];
       if (!meta) continue;
-      const ports = meta.getPorts(c.inputs, c.bitWidth);
+      const ports = meta.getPorts(c.inputs, c.bitWidth, c);
       for (const p of ports) {
         const key = this.getPinKey(c.id, p.id);
         validKeys.add(key);
 
         const currentVal = this.pinValues.get(key);
-        // If port width changed or pin not initialized yet
-        if (!currentVal || currentVal.length !== p.bitWidth) {
-          if (c.type === 'PIN_INPUT' || c.type === 'SWITCH' || c.type === 'BUTTON') {
-            const initial = c.state?.value || Array(p.bitWidth).fill('0');
-            this.pinValues.set(key, initial);
-          } else if (c.type === 'CONSTANT') {
-            const val = c.state?.value || ['1'];
-            this.pinValues.set(key, val);
-          } else if (c.type === 'CLOCK') {
-            const val = c.state?.value || ['0'];
-            this.pinValues.set(key, val);
-          } else {
-            this.pinValues.set(key, Array(p.bitWidth).fill('Z'));
-          }
+        if (p.type === 'in' || p.type === 'inout') {
+          this.pinValues.set(key, Array(p.bitWidth).fill('Z'));
+        } else if (c.type === 'PIN_INPUT' || c.type === 'SWITCH' || c.type === 'BUTTON') {
+          this.pinValues.set(
+            key,
+            this.normalizeVector(c.state?.value, p.bitWidth, '0')
+          );
+        } else if (c.type === 'CONSTANT') {
+          this.pinValues.set(key, this.normalizeVector(c.state?.value, p.bitWidth, '1'));
+        } else if (c.type === 'CLOCK') {
+          this.pinValues.set(key, this.normalizeVector(c.state?.value, p.bitWidth, '0'));
+        } else if (!currentVal || currentVal.length !== p.bitWidth) {
+          this.pinValues.set(key, Array(p.bitWidth).fill('Z'));
         }
       }
     }
@@ -72,10 +89,38 @@ export class Simulator {
         this.netValues.delete(k);
       }
     }
+    for (const id of this.prevClockStates.keys()) {
+      if (!validSequentialIds.has(id)) this.prevClockStates.delete(id);
+    }
   }
 
   private getPinKey(componentId: string, portId: string): string {
-    return `${componentId}:${portId}`;
+    return JSON.stringify([componentId, portId]);
+  }
+
+  private getEndpointFromKey(key: string): [string, string] {
+    const endpoint: unknown = JSON.parse(key);
+    if (!Array.isArray(endpoint) || endpoint.length !== 2
+      || typeof endpoint[0] !== 'string' || typeof endpoint[1] !== 'string') {
+      throw new Error('A simulação encontrou uma chave de porta inválida.');
+    }
+    return [endpoint[0], endpoint[1]];
+  }
+
+  private normalizeVector(value: unknown, width: number, fallback: LogicValue): BitVector {
+    const vector = Array.isArray(value) && value.length > 0
+      ? value as BitVector
+      : Array(width).fill(fallback) as BitVector;
+    return Array.from({ length: width }, (_, index) => vector[index] ?? 'Z');
+  }
+
+  private decodeSelector(value: BitVector, outputCount: number): number | null {
+    let selectedIndex = 0;
+    for (let bit = 0; bit < value.length; bit++) {
+      if (value[bit] !== '0' && value[bit] !== '1') return null;
+      if (value[bit] === '1') selectedIndex += 2 ** bit;
+    }
+    return selectedIndex < outputCount ? selectedIndex : outputCount;
   }
 
   public getPinValue(componentId: string, portId: string): BitVector {
@@ -91,7 +136,7 @@ export class Simulator {
     if (!comp) return netVal;
     const meta = COMPONENT_METADATA[comp.type];
     if (!meta) return netVal;
-    const port = meta.getPorts(comp.inputs, comp.bitWidth).find(p => p.id === portId);
+    const port = meta.getPorts(comp.inputs, comp.bitWidth, comp).find(p => p.id === portId);
     if (port && netVal.length !== port.bitWidth) {
       return Array(port.bitWidth).fill('X');
     }
@@ -141,11 +186,42 @@ export class Simulator {
       }
     };
 
-    // Add all wire connections
+    // Explicit endpoints always connect; only marked junctions bridge wire interiors.
     for (const w of this.wires) {
       const fromKey = this.getPinKey(w.from.componentId, w.from.portId);
       const toKey = this.getPinKey(w.to.componentId, w.to.portId);
       union(fromKey, toKey);
+    }
+
+    const junctions = [...this.components.values()]
+      .filter(component => component.type === 'JUNCTION')
+      .map(component => ({
+        key: this.getPinKey(component.id, 'node'),
+        position: getPortWorldPosition(component, 'node'),
+      }))
+      .filter((junction): junction is { key: string; position: { x: number; y: number } } =>
+        junction.position !== undefined
+      );
+
+    for (const junction of junctions) {
+      for (const wire of this.wires) {
+        const liesOnWire = wire.points.some((point, index) => {
+          if (index === 0) return false;
+          const start = wire.points[index - 1];
+          const end = point;
+          const cross = (junction.position.x - start.x) * (end.y - start.y)
+            - (junction.position.y - start.y) * (end.x - start.x);
+          if (Math.abs(cross) > 0.01) return false;
+          return junction.position.x >= Math.min(start.x, end.x) - 0.01
+            && junction.position.x <= Math.max(start.x, end.x) + 0.01
+            && junction.position.y >= Math.min(start.y, end.y) - 0.01
+            && junction.position.y <= Math.max(start.y, end.y) + 0.01;
+        });
+        if (liesOnWire) {
+          union(junction.key, this.getPinKey(wire.from.componentId, wire.from.portId));
+          union(junction.key, this.getPinKey(wire.to.componentId, wire.to.portId));
+        }
+      }
     }
 
     const groups = new Map<string, string[]>();
@@ -211,27 +287,61 @@ export class Simulator {
             break;
           }
 
-          case 'SPLITTER': {
-            // Check combined bus vs individual bits
-            const combinedVal = this.getPinValue(id, 'combined');
-            const bit0Val = this.getPinValue(id, 'bit0');
-            const bit1Val = this.getPinValue(id, 'bit1');
+          case 'ADDER': {
+            const bitWidth = comp.bitWidth ?? 4;
+            const operandA = this.getPinValue(id, 'a');
+            const operandB = this.getPinValue(id, 'b');
+            const carryIn = this.getPinValue(id, 'carryIn')[0] ?? 'Z';
+            const knownBinaryInputs = carryIn === '0' || carryIn === '1'
+              ? [...operandA, ...operandB].every(value => value === '0' || value === '1')
+              : false;
+            let sum: BitVector;
+            let carryOut: LogicValue;
 
-            // If combined has valid signals, drive bit0 and bit1
-            if (combinedVal.length >= 2 && (combinedVal[0] !== 'Z' || combinedVal[1] !== 'Z')) {
-              const b0: BitVector = [combinedVal[0]];
-              const b1: BitVector = [combinedVal[1]];
-              if (!this.areVectorsEqual(b0, bit0Val)) {
-                this.pinValues.set(this.getPinKey(id, 'bit0'), b0);
+            if (!knownBinaryInputs) {
+              sum = Array(bitWidth).fill('X');
+              carryOut = 'X';
+            } else {
+              let carry = Number(carryIn);
+              sum = Array.from({ length: bitWidth }, (_, bit) => {
+                const total = Number(operandA[bit]) + Number(operandB[bit]) + carry;
+                carry = total >> 1;
+                return (total & 1 ? '1' : '0') as LogicValue;
+              });
+              carryOut = carry ? '1' : '0';
+            }
+
+            const outputs: Array<[string, BitVector]> = [
+              ['sum', sum],
+              ['carryOut', [carryOut]],
+            ];
+            for (const [portId, value] of outputs) {
+              if (!this.areVectorsEqual(value, this.getPinValue(id, portId))) {
+                this.pinValues.set(this.getPinKey(id, portId), value);
                 iterationChanged = true;
               }
-              if (!this.areVectorsEqual(b1, bit1Val)) {
-                this.pinValues.set(this.getPinKey(id, 'bit1'), b1);
-                iterationChanged = true;
+            }
+            break;
+          }
+
+          case 'SPLITTER': {
+            const bitWidth = Math.max(2, Math.min(32, Math.floor(comp.bitWidth ?? 2)));
+            const combinedVal = this.getPinValue(id, 'combined');
+            const bitValues = Array.from({ length: bitWidth }, (_, bit) =>
+              this.getPinValue(id, `bit${bit}`)
+            );
+
+            if (combinedVal.some(value => value !== 'Z')) {
+              for (let bit = 0; bit < bitWidth; bit++) {
+                const value: BitVector = [combinedVal[bit] ?? 'X'];
+                const portId = `bit${bit}`;
+                if (!this.areVectorsEqual(value, this.getPinValue(id, portId))) {
+                  this.pinValues.set(this.getPinKey(id, portId), value);
+                  iterationChanged = true;
+                }
               }
-            } else if (bit0Val[0] !== 'Z' || bit1Val[0] !== 'Z') {
-              // Drive combined from individual bits
-              const merged: BitVector = [bit0Val[0] || '0', bit1Val[0] || '0'];
+            } else if (bitValues.some(value => value[0] !== 'Z')) {
+              const merged = bitValues.map(value => value[0] ?? 'Z');
               if (!this.areVectorsEqual(merged, combinedVal)) {
                 this.pinValues.set(this.getPinKey(id, 'combined'), merged);
                 iterationChanged = true;
@@ -241,13 +351,11 @@ export class Simulator {
           }
 
           case 'MULTIPLEXER': {
-            const in0 = this.getPinValue(id, 'in0');
-            const in1 = this.getPinValue(id, 'in1');
-            const sel = this.getPinValue(id, 'sel')[0] || '0';
-            let outVal: BitVector = ['Z'];
-            if (sel === '0') outVal = in0;
-            else if (sel === '1') outVal = in1;
-            else outVal = ['X'];
+            const inputCount = Math.max(2, Math.min(8, Math.floor(comp.inputs ?? 2)));
+            const selectedIndex = this.decodeSelector(this.getPinValue(id, 'sel'), inputCount);
+            const outVal = selectedIndex === null || selectedIndex >= inputCount
+              ? Array(comp.bitWidth ?? 1).fill('X') as BitVector
+              : this.getPinValue(id, `in${selectedIndex}`);
 
             const currentOut = this.getPinValue(id, 'out');
             if (!this.areVectorsEqual(outVal, currentOut)) {
@@ -258,21 +366,114 @@ export class Simulator {
           }
 
           case 'DEMULTIPLEXER': {
+            const outputCount = Math.max(2, Math.min(8, Math.floor(comp.inputs ?? 2)));
             const inVal = this.getPinValue(id, 'in');
-            const sel = this.getPinValue(id, 'sel')[0] || '0';
-            const width = inVal.length;
-            const zVector = Array(width).fill('0') as BitVector;
-
-            const out0 = sel === '0' ? inVal : zVector;
-            const out1 = sel === '1' ? inVal : zVector;
-
-            if (!this.areVectorsEqual(out0, this.getPinValue(id, 'out0'))) {
-              this.pinValues.set(this.getPinKey(id, 'out0'), out0);
-              iterationChanged = true;
+            const selectedIndex = this.decodeSelector(this.getPinValue(id, 'sel'), outputCount);
+            for (let outputIndex = 0; outputIndex < outputCount; outputIndex++) {
+              const output = selectedIndex === null
+                ? Array(inVal.length).fill('X') as BitVector
+                : selectedIndex === outputIndex
+                  ? inVal
+                  : Array(inVal.length).fill('0') as BitVector;
+              const portId = `out${outputIndex}`;
+              if (!this.areVectorsEqual(output, this.getPinValue(id, portId))) {
+                this.pinValues.set(this.getPinKey(id, portId), output);
+                iterationChanged = true;
+              }
             }
-            if (!this.areVectorsEqual(out1, this.getPinValue(id, 'out1'))) {
-              this.pinValues.set(this.getPinKey(id, 'out1'), out1);
-              iterationChanged = true;
+            break;
+          }
+
+          case 'DECODER': {
+            const selectWidth = Math.max(1, Math.min(5, Math.floor(comp.bitWidth ?? 2)));
+            const outputCount = 2 ** selectWidth;
+            const enabled = this.getPinValue(id, 'enable')[0] ?? 'Z';
+            const selectedIndex = this.decodeSelector(this.getPinValue(id, 'sel'), outputCount);
+            for (let outputIndex = 0; outputIndex < outputCount; outputIndex++) {
+              const value: BitVector = enabled === '0'
+                ? ['0']
+                : enabled !== '1' || selectedIndex === null
+                  ? ['X']
+                  : [selectedIndex === outputIndex ? '1' : '0'];
+              const portId = `out${outputIndex}`;
+              if (!this.areVectorsEqual(value, this.getPinValue(id, portId))) {
+                this.pinValues.set(this.getPinKey(id, portId), value);
+                iterationChanged = true;
+              }
+            }
+            break;
+          }
+
+          case 'PRIORITY_ENCODER': {
+            const inputCount = Math.max(2, Math.min(32, Math.floor(comp.bitWidth ?? 4)));
+            const requestValues = this.getPinValue(id, 'in');
+            const codeWidth = Math.ceil(Math.log2(inputCount));
+            let selectedIndex = -1;
+            let unknownHigherPriority = false;
+            let resultCode: BitVector;
+            let valid: LogicValue;
+
+            for (let index = inputCount - 1; index >= 0; index--) {
+              const request = requestValues[index] ?? 'Z';
+              if (request === '1') {
+                selectedIndex = index;
+                break;
+              }
+              if (request !== '0') unknownHigherPriority = true;
+            }
+
+            if (selectedIndex >= 0) {
+              valid = '1';
+              resultCode = unknownHigherPriority
+                ? Array(codeWidth).fill('X') as BitVector
+                : Array.from({ length: codeWidth }, (_, bit) =>
+                    (selectedIndex & (1 << bit) ? '1' : '0') as LogicValue
+                  );
+            } else if (unknownHigherPriority) {
+              valid = 'X';
+              resultCode = Array(codeWidth).fill('X') as BitVector;
+            } else {
+              valid = '0';
+              resultCode = Array(codeWidth).fill('0') as BitVector;
+            }
+
+            const outputs: Array<[string, BitVector]> = [
+              ['code', resultCode],
+              ['valid', [valid]],
+            ];
+            for (const [portId, value] of outputs) {
+              if (!this.areVectorsEqual(value, this.getPinValue(id, portId))) {
+                this.pinValues.set(this.getPinKey(id, portId), value);
+                iterationChanged = true;
+              }
+            }
+            break;
+          }
+
+          case 'SUBCIRCUIT': {
+            const childSimulator = this.subcircuitSimulators.get(id);
+            if (!childSimulator || !comp.subcircuit) break;
+
+            for (const port of comp.subcircuit.ports) {
+              if (port.direction === 'in') {
+                childSimulator.setPinValue(
+                  port.pinComponentId,
+                  'out',
+                  this.getPinValue(id, port.id)
+                );
+              }
+            }
+            childSimulator.step();
+            childSimulator.step();
+
+            for (const port of comp.subcircuit.ports) {
+              if (port.direction !== 'out') continue;
+              const output = childSimulator.getPinValue(port.pinComponentId, 'in');
+              const current = this.getPinValue(id, port.id);
+              if (!this.areVectorsEqual(output, current)) {
+                this.pinValues.set(this.getPinKey(id, port.id), output);
+                iterationChanged = true;
+              }
             }
             break;
           }
@@ -352,12 +553,12 @@ export class Simulator {
         // Verify bus width consistency across connected ports
         const portWidths: number[] = [];
         for (const pinKey of net) {
-          const [compId, portId] = pinKey.split(':');
+          const [compId, portId] = this.getEndpointFromKey(pinKey);
           const comp = this.components.get(compId);
           if (!comp) continue;
           const meta = COMPONENT_METADATA[comp.type];
           if (!meta) continue;
-          const port = meta.getPorts(comp.inputs, comp.bitWidth).find(p => p.id === portId);
+          const port = meta.getPorts(comp.inputs, comp.bitWidth, comp).find(p => p.id === portId);
           if (port) portWidths.push(port.bitWidth);
         }
 
@@ -378,18 +579,20 @@ export class Simulator {
           // Gather all output pins driving this net
           const drivers: BitVector[] = [];
           for (const pinKey of net) {
-            const [compId, portId] = pinKey.split(':');
+            const [compId, portId] = this.getEndpointFromKey(pinKey);
             const comp = this.components.get(compId);
             if (!comp) continue;
             const meta = COMPONENT_METADATA[comp.type];
             if (!meta) continue;
-            const port = meta.getPorts(comp.inputs, comp.bitWidth).find(p => p.id === portId);
+            const port = meta.getPorts(comp.inputs, comp.bitWidth, comp).find(p => p.id === portId);
             if (port && (port.type === 'out' || port.type === 'inout')) {
               const val = this.pinValues.get(pinKey);
               if (val) drivers.push(val);
             }
           }
-          resolved = resolveBus(drivers);
+          resolved = drivers.length > 0
+            ? resolveBus(drivers)
+            : Array(portWidths[0] ?? 1).fill('Z');
           if (resolved.includes('X')) {
             diagnostics.set(net[0], {
               type: 'contention',
@@ -403,12 +606,12 @@ export class Simulator {
         for (const pinKey of net) {
           this.netValues.set(pinKey, resolved);
 
-          const [compId, portId] = pinKey.split(':');
+          const [compId, portId] = this.getEndpointFromKey(pinKey);
           const comp = this.components.get(compId);
           if (!comp) continue;
           const meta = COMPONENT_METADATA[comp.type];
           if (!meta) continue;
-          const port = meta.getPorts(comp.inputs, comp.bitWidth).find(p => p.id === portId);
+          const port = meta.getPorts(comp.inputs, comp.bitWidth, comp).find(p => p.id === portId);
           if (port && (port.type === 'in' || port.type === 'inout' || isWidthMismatch)) {
             const current = this.pinValues.get(pinKey) || [];
             // Match port width if resolving mismatch

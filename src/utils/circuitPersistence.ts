@@ -1,9 +1,10 @@
 import { COMPONENT_METADATA } from '../engine/components';
-import { CircuitState, ComponentInstance, Wire } from '../types/circuit';
+import { CircuitState, ComponentInstance, SubcircuitDefinition, SubcircuitPort, Wire } from '../types/circuit';
 
 export const AUTOSAVE_STORAGE_KEY = 'logdev-ultimate:autosave:v1';
 
 const DIRECTIONS = ['NORTH', 'EAST', 'SOUTH', 'WEST'] as const;
+const MAX_SUBCIRCUIT_DEPTH = 16;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -17,6 +18,7 @@ function isComponentInstance(value: unknown): value is ComponentInstance {
     && (state.value === undefined || isLogicVector(state.value))
     && (state.q === undefined || isLogicVector(state.q) || isLogicValue(state.q))
   );
+  const validSubcircuit = value.type !== 'SUBCIRCUIT' || isSubcircuitDefinition(value.subcircuit);
   return typeof value.id === 'string' && value.id.length > 0
     && typeof value.type === 'string'
     && Object.prototype.hasOwnProperty.call(COMPONENT_METADATA, value.type)
@@ -31,7 +33,8 @@ function isComponentInstance(value: unknown): value is ComponentInstance {
     && (value.inputs === undefined
       || (typeof value.inputs === 'number'
         && Number.isInteger(value.inputs) && value.inputs >= 2 && value.inputs <= 8))
-    && validState;
+    && validState
+    && validSubcircuit;
 }
 
 function isLogicValue(value: unknown): boolean {
@@ -40,6 +43,27 @@ function isLogicValue(value: unknown): boolean {
 
 function isLogicVector(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0 && value.every(isLogicValue);
+}
+
+function isSubcircuitPort(value: unknown): value is SubcircuitPort {
+  return isRecord(value)
+    && typeof value.id === 'string' && value.id.length > 0
+    && typeof value.name === 'string' && value.name.length > 0
+    && (value.direction === 'in' || value.direction === 'out')
+    && typeof value.bitWidth === 'number' && Number.isInteger(value.bitWidth)
+    && value.bitWidth >= 1 && value.bitWidth <= 32
+    && typeof value.pinComponentId === 'string' && value.pinComponentId.length > 0;
+}
+
+function isSubcircuitDefinition(value: unknown): value is SubcircuitDefinition {
+  if (!isRecord(value) || typeof value.name !== 'string'
+    || !isRecord(value.circuit)
+    || !Array.isArray(value.circuit.components)
+    || !Array.isArray(value.circuit.wires)
+    || !Array.isArray(value.ports)) return false;
+  const ports: unknown[] = value.ports;
+  return ports.every(isSubcircuitPort)
+    && new Set(ports.map(port => port.id)).size === ports.length;
 }
 
 function isPoint(value: unknown): value is { x: number; y: number } {
@@ -52,7 +76,10 @@ function isEndpoint(value: unknown): value is { componentId: string; portId: str
   return isRecord(value) && typeof value.componentId === 'string' && typeof value.portId === 'string';
 }
 
-export function parseCircuitData(data: unknown): CircuitState {
+export function parseCircuitData(data: unknown, depth = 0): CircuitState {
+  if (depth > MAX_SUBCIRCUIT_DEPTH) {
+    throw new Error(`O projeto ultrapassa o limite de ${MAX_SUBCIRCUIT_DEPTH} níveis de subcircuitos.`);
+  }
   const root = isRecord(data) && isRecord(data.circuit) ? data.circuit : data;
   if (!isRecord(root) || !Array.isArray(root.components) || !Array.isArray(root.wires)) {
     throw new Error('O arquivo não contém uma estrutura de circuito válida.');
@@ -82,10 +109,10 @@ export function parseCircuitData(data: unknown): CircuitState {
     const toComponent = componentMap.get(toEndpoint.componentId);
     if (!fromComponent || !toComponent) return false;
     return COMPONENT_METADATA[fromComponent.type]
-      .getPorts(fromComponent.inputs, fromComponent.bitWidth)
+      .getPorts(fromComponent.inputs, fromComponent.bitWidth, fromComponent)
       .some(port => port.id === fromEndpoint.portId)
       && COMPONENT_METADATA[toComponent.type]
-        .getPorts(toComponent.inputs, toComponent.bitWidth)
+        .getPorts(toComponent.inputs, toComponent.bitWidth, toComponent)
         .some(port => port.id === toEndpoint.portId);
   });
   if (!validWires) {
@@ -94,6 +121,24 @@ export function parseCircuitData(data: unknown): CircuitState {
   const wires = root.wires;
   if (new Set(wires.map(wire => wire.id)).size !== wires.length) {
     throw new Error('O circuito contém identificadores de conexão duplicados.');
+  }
+
+  for (const component of components) {
+    if (component.type !== 'SUBCIRCUIT') continue;
+    if (!component.subcircuit) {
+      throw new Error('O projeto contém um subcircuito sem definição interna.');
+    }
+    const childCircuit = parseCircuitData(component.subcircuit.circuit, depth + 1);
+    for (const port of component.subcircuit.ports) {
+      const pin = childCircuit.components.find(candidate => candidate.id === port.pinComponentId);
+      const expectedType = port.direction === 'in' ? 'PIN_INPUT' : 'PIN_OUTPUT';
+      const expectedPortId = port.direction === 'in' ? 'out' : 'in';
+      if (!pin || pin.type !== expectedType || (pin.bitWidth ?? 1) !== port.bitWidth
+        || !COMPONENT_METADATA[pin.type].getPorts(pin.inputs, pin.bitWidth, pin)
+          .some(candidate => candidate.id === expectedPortId)) {
+        throw new Error(`A porta "${port.name}" do subcircuito não corresponde ao pino interno.`);
+      }
+    }
   }
 
   return { components, wires };

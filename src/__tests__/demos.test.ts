@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { clockCounterDemo, fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
 import { Simulator } from '../engine/simulator';
+import { parseCircuitData } from '../utils/circuitPersistence';
 
 describe('Demo Circuits', () => {
+  it('validates every shipped demo circuit as an importable project', () => {
+    expect(() => parseCircuitData(fullAdderDemo)).not.toThrow();
+    expect(() => parseCircuitData(srLatchDemo)).not.toThrow();
+    expect(() => parseCircuitData(clockCounterDemo)).not.toThrow();
+  });
+
   it('computes 1 + 1 = Sum 0, Cout 1 in Full Adder demo', () => {
     const sim = new Simulator();
     sim.setCircuit(fullAdderDemo.components, fullAdderDemo.wires);

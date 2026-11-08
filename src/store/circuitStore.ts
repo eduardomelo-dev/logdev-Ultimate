@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { COMPONENT_METADATA } from '../engine/components';
 import { getComponentDimensions, getPortWorldPosition } from '../engine/componentGeometry';
 import { Simulator } from '../engine/simulator';
+import { extractSubcircuit } from '../engine/subcircuits';
 import { routeOrthogonalWire } from '../canvas/wireRouter';
 import {
   BitVector,
@@ -9,6 +10,7 @@ import {
   ComponentInstance,
   ComponentType,
   Point,
+  SignalTraceSample,
   Wire,
   WireEndpoint
 } from '../types/circuit';
@@ -18,6 +20,16 @@ export type ToolType = 'select' | 'poke' | 'wire' | 'delete';
 interface HistorySnapshot {
   components: ComponentInstance[];
   wires: Wire[];
+}
+
+interface CircuitNavigationFrame {
+  parentComponents: ComponentInstance[];
+  parentWires: Wire[];
+  parentSelectedIds: string[];
+  parentHistory: HistorySnapshot[];
+  parentHistoryIndex: number;
+  subcircuitId: string;
+  name: string;
 }
 
 /**
@@ -46,6 +58,12 @@ interface CircuitStoreState {
   ticks: number;
   /** Engine simulator instance */
   simulator: Simulator;
+  /** Selected single-bit ports recorded by the signal chronogram */
+  tracedSignals: WireEndpoint[];
+  /** Bounded history for the selected signal ports */
+  signalHistory: SignalTraceSample[];
+  /** Parent circuits for the currently edited hierarchical subcircuit */
+  navigationStack: CircuitNavigationFrame[];
 
   /** Snapshots for full Undo/Redo support */
   history: HistorySnapshot[];
@@ -63,6 +81,14 @@ interface CircuitStoreState {
   moveComponents: (positions: Array<Pick<ComponentInstance, 'id' | 'x' | 'y'>>) => void;
   /** Pastes a copied circuit, optionally anchored at a world-space position */
   pasteCircuit: (circuit: CircuitState, anchor?: Point) => void;
+  /** Replaces the selected component group with a reusable hierarchical block */
+  createSubcircuitFromSelection: () => ComponentInstance;
+  /** Opens a reusable block for editing */
+  enterSubcircuit: (componentId: string) => void;
+  /** Returns to the containing circuit */
+  exitSubcircuit: () => void;
+  /** Returns the complete root project, including any active child edits */
+  getProjectCircuit: () => CircuitState;
   /** Updates component properties or position */
   updateComponent: (id: string, updates: Partial<ComponentInstance>) => void;
   /** Selects or deselects an element */
@@ -73,6 +99,8 @@ interface CircuitStoreState {
   removeSelected: () => void;
   /** Connects two ports with an orthogonal wire */
   addWire: (from: WireEndpoint, to: WireEndpoint, points: Point[]) => Wire;
+  /** Places an electrical junction at an exact canvas coordinate */
+  addJunctionAt: (position: Point) => ComponentInstance;
   /** Removes a wire by ID */
   removeWire: (wireId: string) => void;
   /** Sets current interactive tool */
@@ -89,6 +117,8 @@ interface CircuitStoreState {
   setRunning: (running: boolean) => void;
   /** Configures clock frequency in Hz */
   setClockFrequency: (freq: number) => void;
+  /** Selects which single-bit signals are captured in the chronogram */
+  setTracedSignals: (signals: WireEndpoint[]) => void;
   /** Resets canvas and clears workspace */
   resetCircuit: () => void;
   /** Loads complete circuit JSON */
@@ -100,6 +130,12 @@ interface CircuitStoreState {
 }
 
 const MAX_HISTORY = 30;
+const MAX_SIGNAL_HISTORY = 300;
+const MAX_TRACED_SIGNALS = 8;
+
+export function getSignalTraceKey(signal: WireEndpoint): string {
+  return `${signal.componentId}:${signal.portId}`;
+}
 
 export const useCircuitStore = create<CircuitStoreState>((set, get) => {
   const initialSimulator = new Simulator();
@@ -125,6 +161,44 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
     const sim = get().simulator;
     sim.setCircuit(comps, wires);
     sim.step();
+    const navigationStack = updateNavigationStack(comps, wires);
+    set({ tracedSignals: [], signalHistory: [], navigationStack });
+  };
+
+  const updateNavigationStack = (
+    components: ComponentInstance[],
+    wires: Wire[],
+    stack = get().navigationStack
+  ): CircuitNavigationFrame[] => {
+    if (stack.length === 0) return stack;
+    const updatedStack = stack.map(frame => ({ ...frame }));
+    let childCircuit: CircuitState = { components, wires };
+    for (let index = updatedStack.length - 1; index >= 0; index--) {
+      const frame = updatedStack[index];
+      let found = false;
+      const parentComponents = frame.parentComponents.map(component => {
+        if (component.id !== frame.subcircuitId) return component;
+        if (!component.subcircuit) {
+          throw new Error(`A definição do subcircuito "${frame.name}" não foi encontrada.`);
+        }
+        found = true;
+        return {
+          ...component,
+          subcircuit: { ...component.subcircuit, circuit: childCircuit },
+        };
+      });
+      if (!found) {
+        throw new Error(`O subcircuito "${frame.name}" não existe mais no circuito pai.`);
+      }
+      frame.parentComponents = parentComponents;
+      frame.parentHistory = frame.parentHistory.map((snapshot, snapshotIndex) =>
+        snapshotIndex === frame.parentHistoryIndex
+          ? { components: parentComponents, wires: frame.parentWires }
+          : snapshot
+      );
+      childCircuit = { components: parentComponents, wires: frame.parentWires };
+    }
+    return updatedStack;
   };
 
   return {
@@ -139,14 +213,23 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
     clockFrequency: 2, // 2 Hz default
     ticks: 0,
     simulator: initialSimulator,
+    tracedSignals: [],
+    signalHistory: [],
+    navigationStack: [],
     history: [{ components: [], wires: [] }],
     historyIndex: 0,
 
     addComponent: (type: ComponentType, x: number, y: number) => {
       const id = `${type.toLowerCase()}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const meta = COMPONENT_METADATA[type];
-      const initialBitWidth = type === 'REGISTER' ? 4 : type === 'HEX_DISPLAY' ? 4 : 1;
-      const initialInputs = (type === 'AND' || type === 'OR' || type === 'NAND' || type === 'NOR' || type === 'XOR' || type === 'XNOR') ? 2 : undefined;
+      const initialBitWidth = type === 'REGISTER' || type === 'HEX_DISPLAY' || type === 'ADDER'
+        ? 4
+        : type === 'PRIORITY_ENCODER' ? 4
+        : type === 'DECODER' ? 2
+        : type === 'SPLITTER' ? 2 : 1;
+      const initialInputs = (
+        ['AND', 'OR', 'NAND', 'NOR', 'XOR', 'XNOR', 'MULTIPLEXER', 'DEMULTIPLEXER'].includes(type)
+      ) ? 2 : undefined;
 
       const newComp: ComponentInstance = {
         id,
@@ -245,6 +328,77 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       pushHistory(nextComponents, nextWires);
     },
 
+    createSubcircuitFromSelection: () => {
+      const { components, wires, selectedIds } = get();
+      const selectedComponentIds = components
+        .filter(component => selectedIds.includes(component.id))
+        .map(component => component.id);
+      const { circuit, subcircuitId } = extractSubcircuit(
+        { components, wires },
+        selectedComponentIds,
+        `Subcircuito ${components.filter(component => component.type === 'SUBCIRCUIT').length + 1}`
+      );
+      const createdSubcircuit = circuit.components.find(component => component.id === subcircuitId);
+      if (!createdSubcircuit) throw new Error('O subcircuito criado não foi encontrado no circuito atualizado.');
+      set({
+        components: circuit.components,
+        wires: circuit.wires,
+        selectedIds: [subcircuitId],
+      });
+      syncSimulator(circuit.components, circuit.wires);
+      pushHistory(circuit.components, circuit.wires);
+      return createdSubcircuit;
+    },
+
+    enterSubcircuit: (componentId: string) => {
+      const { components, wires, selectedIds, navigationStack, history, historyIndex } = get();
+      const component = components.find(item => item.id === componentId);
+      if (component?.type !== 'SUBCIRCUIT' || !component.subcircuit) {
+        throw new Error('O componente selecionado não contém um subcircuito editável.');
+      }
+      const childCircuit = component.subcircuit.circuit;
+      set({
+        navigationStack: [...navigationStack, {
+          parentComponents: components,
+          parentWires: wires,
+          parentSelectedIds: selectedIds,
+          parentHistory: history,
+          parentHistoryIndex: historyIndex,
+          subcircuitId: component.id,
+          name: component.subcircuit.name,
+        }],
+        components: childCircuit.components,
+        wires: childCircuit.wires,
+        selectedIds: [],
+        history: [{ components: childCircuit.components, wires: childCircuit.wires }],
+        historyIndex: 0,
+      });
+      syncSimulator(childCircuit.components, childCircuit.wires);
+    },
+
+    exitSubcircuit: () => {
+      const { navigationStack } = get();
+      if (navigationStack.length === 0) return;
+      const navigationStackAfterExit = navigationStack.slice(0, -1);
+      const frame = navigationStack[navigationStack.length - 1];
+      set({
+        navigationStack: navigationStackAfterExit,
+        components: frame.parentComponents,
+        wires: frame.parentWires,
+        selectedIds: frame.parentSelectedIds,
+        history: frame.parentHistory,
+        historyIndex: frame.parentHistoryIndex,
+      });
+      syncSimulator(frame.parentComponents, frame.parentWires);
+    },
+
+    getProjectCircuit: () => {
+      const { components, wires, navigationStack } = get();
+      if (navigationStack.length === 0) return { components, wires };
+      const rootFrame = navigationStack[0];
+      return { components: rootFrame.parentComponents, wires: rootFrame.parentWires };
+    },
+
     updateComponent: (id: string, updates: Partial<ComponentInstance>) => {
       const { components, wires } = get();
       const current = components.find(component => component.id === id);
@@ -259,8 +413,25 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       }
 
       const nextComponents = components.map(component => component.id === id ? updated : component);
-      const nextWires = updates.direction && updates.direction !== current.direction
-        ? wires.map(wire => {
+      const geometryChanged = (
+        (updates.direction !== undefined && updates.direction !== current.direction)
+        || (updates.inputs !== undefined && updates.inputs !== current.inputs)
+        || (updates.bitWidth !== undefined && updates.bitWidth !== current.bitWidth)
+        || (updates.subcircuit !== undefined && updates.subcircuit !== current.subcircuit)
+      );
+      const validPorts = geometryChanged
+        ? new Set(COMPONENT_METADATA[updated.type]
+          .getPorts(updated.inputs, updated.bitWidth, updated)
+          .map(port => port.id))
+        : undefined;
+      const wiresWithValidPorts = validPorts
+        ? wires.filter(wire => {
+            return (wire.from.componentId !== id || validPorts.has(wire.from.portId))
+              && (wire.to.componentId !== id || validPorts.has(wire.to.portId));
+          })
+        : wires;
+      const nextWires = geometryChanged
+        ? wiresWithValidPorts.map(wire => {
             if (wire.from.componentId !== id && wire.to.componentId !== id) return wire;
             const fromComponent = nextComponents.find(component => component.id === wire.from.componentId);
             const toComponent = nextComponents.find(component => component.id === wire.to.componentId);
@@ -334,6 +505,25 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
       return newWire;
     },
 
+    addJunctionAt: (position: Point) => {
+      const meta = COMPONENT_METADATA.JUNCTION;
+      const component: ComponentInstance = {
+        id: `junction_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'JUNCTION',
+        x: position.x - meta.width / 2,
+        y: position.y - meta.height / 2,
+        direction: 'EAST',
+        label: meta.name,
+        bitWidth: 1,
+        state: {},
+      };
+      const nextComponents = [...get().components, component];
+      set({ components: nextComponents, selectedIds: [component.id] });
+      syncSimulator(nextComponents, get().wires);
+      pushHistory(nextComponents, get().wires);
+      return component;
+    },
+
     removeWire: (wireId: string) => {
       const nextWires = get().wires.filter(w => w.id !== wireId);
       set({ wires: nextWires });
@@ -376,6 +566,7 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         });
 
         set({ components: nextComponents });
+        set({ navigationStack: updateNavigationStack(nextComponents, get().wires) });
         get().simulator.setPinValue(componentId, 'out', nextVal);
         get().simulator.step();
         pushHistory(nextComponents, get().wires);
@@ -399,10 +590,25 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
 
       if (changedClock) {
         set({ components: nextComponents });
+        set({ navigationStack: updateNavigationStack(nextComponents, get().wires) });
       }
 
       sim.step();
-      set({ ticks: get().ticks + 1 });
+      const nextTick = get().ticks + 1;
+      const { tracedSignals, signalHistory } = get();
+      const sample: SignalTraceSample = {
+        tick: nextTick,
+        values: Object.fromEntries(tracedSignals.map(signal => [
+          getSignalTraceKey(signal),
+          sim.getNetValue(signal.componentId, signal.portId),
+        ])),
+      };
+      set({
+        ticks: nextTick,
+        signalHistory: tracedSignals.length
+          ? [...signalHistory, sample].slice(-MAX_SIGNAL_HISTORY)
+          : signalHistory,
+      });
     },
 
     setRunning: (running: boolean) => {
@@ -411,6 +617,23 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
 
     setClockFrequency: (freq: number) => {
       set({ clockFrequency: Math.max(0.1, Math.min(100, freq)) });
+    },
+
+    setTracedSignals: (signals: WireEndpoint[]) => {
+      const uniqueSignals = [...new Map(
+        signals.map(signal => [getSignalTraceKey(signal), signal])
+      ).values()].slice(0, MAX_TRACED_SIGNALS);
+      const sample: SignalTraceSample = {
+        tick: get().ticks,
+        values: Object.fromEntries(uniqueSignals.map(signal => [
+          getSignalTraceKey(signal),
+          get().simulator.getNetValue(signal.componentId, signal.portId),
+        ])),
+      };
+      set({
+        tracedSignals: uniqueSignals,
+        signalHistory: uniqueSignals.length ? [sample] : [],
+      });
     },
 
     resetCircuit: () => {
@@ -422,6 +645,9 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         pendingComponentType: null,
         ticks: 0,
         simulator: newSim,
+        tracedSignals: [],
+        signalHistory: [],
+        navigationStack: [],
         history: [{ components: [], wires: [] }],
         historyIndex: 0,
       });
@@ -437,6 +663,9 @@ export const useCircuitStore = create<CircuitStoreState>((set, get) => {
         selectedIds: [],
         pendingComponentType: null,
         simulator: newSim,
+        tracedSignals: [],
+        signalHistory: [],
+        navigationStack: [],
         history: [{ components: circuit.components, wires: circuit.wires }],
         historyIndex: 0,
       });

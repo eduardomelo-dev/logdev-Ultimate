@@ -5,6 +5,7 @@ import {
   ChevronRight,
   GitFork,
   Radio,
+  Calculator,
   SlidersHorizontal,
   Database,
   Lightbulb,
@@ -23,6 +24,7 @@ interface CategoryConfig {
 const CATEGORIES: CategoryConfig[] = [
   { id: 'wiring', name: 'Fiação & Sinais', icon: GitFork },
   { id: 'gates', name: 'Portas Lógicas', icon: Radio },
+  { id: 'arithmetic', name: 'Aritmética', icon: Calculator },
   { id: 'plexers', name: 'Plexers & Decodificadores', icon: SlidersHorizontal },
   { id: 'memory', name: 'Memória & Sequencial', icon: Database },
   { id: 'io', name: 'Entradas & Saídas (I/O)', icon: Lightbulb },
@@ -45,7 +47,8 @@ export const Sidebar: React.FC = () => {
     setPendingComponentType(type);
   };
 
-  const allComponents = Object.values(COMPONENT_METADATA);
+  const allComponents = Object.values(COMPONENT_METADATA)
+    .filter(component => component.type !== 'SUBCIRCUIT');
   const filteredComponents = allComponents.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -42,3 +42,33 @@ export function hitTestWire(wire: Wire, worldPoint: Point, tolerance = 6): boole
   }
   return false;
 }
+
+export function getClosestPointOnWire(wire: Wire, point: Point): Point | undefined {
+  if (!wire.points || wire.points.length < 2) return undefined;
+  let closestPoint: Point | undefined;
+  let closestDistance = Infinity;
+
+  for (let index = 0; index < wire.points.length - 1; index++) {
+    const start = wire.points[index];
+    const end = wire.points[index + 1];
+    const deltaX = end.x - start.x;
+    const deltaY = end.y - start.y;
+    const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+    const fraction = lengthSquared === 0
+      ? 0
+      : Math.max(0, Math.min(1, (
+          (point.x - start.x) * deltaX + (point.y - start.y) * deltaY
+        ) / lengthSquared));
+    const candidate = {
+      x: start.x + fraction * deltaX,
+      y: start.y + fraction * deltaY,
+    };
+    const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+    if (distance < closestDistance) {
+      closestPoint = candidate;
+      closestDistance = distance;
+    }
+  }
+
+  return closestPoint;
+}

@@ -1,7 +1,7 @@
 # logdev-Ultimate ⚡
 
 <p align="center">
-  <img src="public/icon.svg" alt="logdev-Ultimate Logo" width="128" height="128" />
+  <img src="src/assets/brand-logo.jpg" alt="Logo do logdev-Ultimate" width="128" height="128" />
   <br>
   <strong>Simulador de Circuitos Lógicos Digitais & CAD Moderno</strong>
   <br>
@@ -10,7 +10,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Versão-1.2.0-64748b?style=for-the-badge" alt="Versão 1.2.0" />
-  <img src="https://img.shields.io/badge/Testes-41%20Passando-10b981?style=for-the-badge" alt="41 testes passando" />
   <img src="https://img.shields.io/badge/Plataformas-Linux%20%7C%20Windows%20%7C%20Web-38bdf8?style=for-the-badge" alt="Multiplataforma" />
   <img src="https://img.shields.io/badge/Licença-MIT-slate?style=for-the-badge" alt="Licença MIT" />
 </p>
@@ -34,6 +33,22 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Menu de contexto e clipboard:** clique com o botão direito sobre um elemento para recortar, copiar, colar ou excluir; `Ctrl+C`, `Ctrl+X`, `Ctrl+V` e `Delete` também funcionam. Fios entre os componentes copiados acompanham a cópia.
 - **Recursos preservados:** rotação, autosave e recuperação, diagnósticos, animação, Undo/Redo, busca, importação e exportação continuam disponíveis.
 
+### Próxima versão — em desenvolvimento
+
+- **Análise combinacional:** o botão **Analisar** gera a tabela-verdade, expressões booleanas minimizadas e mapas de Karnaugh a partir dos pinos de entrada, saídas e sondas conectados.
+- **Execução isolada:** cada combinação é simulada em uma instância temporária; a análise não altera entradas, estado ou execução do circuito aberto.
+- **Limites explícitos:** aceita circuitos de até 200 componentes e 8 entradas conectadas de 1 bit (256 combinações). Os mapas de Karnaugh são exibidos até 4 entradas; tabela e expressões continuam disponíveis até 8.
+- **Validação:** circuitos sequenciais, barramentos, saídas indeterminadas, contenções e conexões inválidas são identificados em vez de gerar resultados enganosos.
+- **Cronograma de sinais:** monitore até 8 portas conectadas de 1 bit, com até 300 amostras limitadas por histórico. As amostras são coletadas a cada tick e só são gravadas quando há sinais selecionados.
+- **Vetores de teste:** configure até 64 linhas com valores esperados em lógica de 4 estados (`0`, `1`, `X`, `Z`); linhas podem formar uma sequência para testar circuitos sequenciais, incluindo clock controlado como entrada. A execução é isolada e preserva o estado original do projeto.
+- **Subcircuitos hierárquicos:** selecione componentes conectados e use **Criar subcircuito** no menu de contexto. Entradas e saídas externas são convertidas automaticamente em portas de interface; barramentos preservam sua largura.
+- **Edição hierárquica:** dê duplo clique em um bloco reutilizável ou use **Editar subcircuito** no menu de contexto. A navegação mostra o caminho de volta; edições no conteúdo são mantidas no projeto raiz, autosave e exportação JSON.
+- **Limite de interface:** portas bidirecionais na fronteira do grupo precisam ser tratadas antes da extração. A importação valida definições aninhadas até 16 níveis.
+- **Aritmética, barramentos e seleção:** o somador aceita barramentos de 1 a 32 bits e carry-in/out; o splitter distribui/reúne de 2 a 32 bits; MUX e DEMUX aceitam dados de 1 a 32 bits e podem ser configurados para 2, 4 ou 8 linhas. Decodificador 1:2 até 5:32 e codificador prioritário com 2 a 32 requisições. A seleção multibit usa o bit 0 como menos significativo; o codificador dá prioridade ao índice mais alto.
+- **Montagem mais segura:** ao desconectar ou mover portas reconfiguráveis, entradas sem fio voltam a `Z`, estados de pinos seguem o snapshot do projeto e conexões são reposicionadas junto às portas.
+- **Junções e ramificações:** clique com o botão direito sobre um fio e escolha **Inserir junção e criar ramificação**. A junção fica exatamente no traçado; clique no ponto da junção e depois em uma porta para desenhar o novo ramo. Fios que apenas se cruzam não se conectam sem uma junção explícita.
+- **Sem paridade total ainda:** comparadores, shifters, memórias RAM/ROM, mais componentes sequenciais, importação HDL e integração FPGA continuam em etapas futuras.
+
 ---
 
 ## 🚀 Principais Recursos
@@ -53,6 +68,7 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - **Animação de sinais ativos:** traços verdes percorrem fios em nível lógico `1` enquanto a simulação está rodando. A animação pausa junto com a simulação; a renderização estática continua disponível.
 - **Modo Interativo "Poke" (Mãozinha):**
   - Alterne interruptores, chaves gangorra e pinos de entrada com um clique direto sobre o circuito, observando as ondas de propagação instantaneamente.
+- **Análise e verificação (em desenvolvimento para a próxima versão):** tabelas-verdade, mapas de Karnaugh, cronograma temporal e vetores de teste para circuitos combinacionais e sequenciais.
 - **Exportação Profissional:**
   - **Exportar PDF:** Gera diagramas em folha **A4 branca e monocromática**, ajustados automaticamente a uma única página; a orientação retrato ou paisagem acompanha o formato do circuito.
   - **Exportar JPEG:** Renderiza imagens nítidas em alta resolução (escala 2x DPI) com fundo escuro elegante.
@@ -72,6 +88,8 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 - Arraste sobre uma área vazia do canvas para selecionar uma janela; a direção do arraste define seleção por janela (esquerda→direita) ou cruzada (direita→esquerda). `Ctrl`/`Cmd` adiciona à seleção.
 - Clique com o botão direito para abrir as ações de recortar, copiar, colar e excluir; `Ctrl+C`, `Ctrl+X`, `Ctrl+V` e `Delete` são atalhos. Arraste um grupo selecionado para movê-lo em conjunto.
 - `Ctrl+Z` desfaz e `Ctrl+Y` refaz; `Ctrl+Shift+Z` também refaz. `Escape` cancela colocação/conexão e limpa a seleção.
+- Para criar um bloco reutilizável, selecione componentes com conexões externas e escolha **Criar subcircuito** no menu de contexto. Entre no bloco com duplo clique e use a trilha no topo do canvas para voltar ou navegar aos níveis anteriores.
+- Para ramificar um fio, clique nele com o botão direito, insira uma junção e conecte uma porta ao ponto central da junção. Cruzamentos sem junção permanecem eletricamente separados.
 - Use **Pausar**, **Avançar 1 Tick** e o seletor de frequência para controlar a simulação. A animação visual dos fios ativos acompanha o estado de execução.
 - O autosave local é independente da exportação JSON e não envia projetos à rede. Arquivos inválidos ou armazenamento indisponível são reportados na barra de estado e no console.
 - Os avisos de simulação também aparecem no inspetor quando nenhum componente ou fio está selecionado.
@@ -81,9 +99,10 @@ Disponível como **aplicação web** e **aplicativo nativo desktop** para **Linu
 
 | Categoria | Componentes Inclusos |
 | :--- | :--- |
-| **Fiação & Sinais** | Pinos de Entrada, Pinos de Saída, Clock periódica (1 a 20 Hz), Constantes (0/1), Sondas (*Probes*), Divisores/Unificadores (*Splitters*). |
+| **Fiação & Sinais** | Pinos de Entrada, Pinos de Saída, Clock periódica (1 a 20 Hz), Constantes (0/1), Sondas (*Probes*), Splitter configurável de 2 a 32 bits e junções para ramificar fios. |
 | **Portas Lógicas** | AND, OR, NOT, NAND, NOR, XOR, XNOR, Buffer e Tri-State (com suporte a 2 até 8 entradas por porta). |
-| **Plexers** | Multiplexador 2:1 (MUX) e Demultiplexador 1:2 (DEMUX). |
+| **Aritmética** | Somador configurável de barramentos (1 a 32 bits), com carry de entrada e saída; entradas indeterminadas propagam `X`. |
+| **Plexers** | Multiplexadores 2:1, 4:1 e 8:1; demultiplexadores 1:2, 1:4 e 1:8; decodificador binário e codificador prioritário. |
 | **Memória & Sequencial** | Flip-Flop tipo D (borda de subida de clock) e Registrador multi-bit (com sinal de *Write Enable*). |
 | **Entradas e Saídas (I/O)** | Botão pulsador, Chave tipo Toggle, LEDs individuais, Displays de 7 Segmentos e Displays Hexadecimais. |
 
@@ -102,15 +121,16 @@ A base de código está organizada sob padrões modulares de software:
 
 ```text
 logdev-studio/
-├── build/                      # Ícones de alta resolução (.png, .ico)
+├── build/                      # Ícones da aplicação desktop (.png, .ico)
 ├── dist/                       # Build estático otimizado gerado pelo Vite
 ├── electron/
 │   └── main.cjs                # Processo principal Electron (ciclo de vida e janela)
 ├── public/
-│   ├── icon.svg                # Logotipo vetorial oficial
-│   └── icon.png                # Ícone em bitmap
+│   └── icon.png                # Favicon PNG
 ├── release/                    # Pacotes compilados instaláveis (.rpm, .exe)
 ├── src/
+│   ├── assets/
+│   │   └── brand-logo.jpg      # Imagem da marca usada na interface
 │   ├── App.tsx                 # Composição da interface React
 │   ├── main.tsx                # Entrada do renderer React
 │   ├── __tests__/              # Testes de integração de UI e circuitos de demonstração
@@ -120,8 +140,11 @@ logdev-studio/
 │   │   └── wireRouter.ts       # Algoritmo de roteamento Manhattan e teste de colisão
 │   ├── components/
 │   │   ├── Header.tsx          # Barra de ferramentas superior (controles, clock, exportações)
+│   │   ├── LogicAnalyzer.tsx   # Interface de análise e verificação de circuitos
+│   │   ├── SignalChronogram.tsx # Captura e visualização temporal de sinais
 │   │   ├── Sidebar.tsx         # Catálogo lateral com busca em tempo real
 │   │   ├── Inspector.tsx       # Painel de propriedades do elemento selecionado
+│   │   ├── TestVectorPanel.tsx # Edição e execução de vetores de teste
 │   │   └── StatusBar.tsx       # Informações de ticks, frequência e escala de zoom
 │   ├── demos/
 │   │   └── sampleCircuits.ts   # Esquemas pré-montados (Full Adder, SR Latch, Contador)
@@ -129,7 +152,9 @@ logdev-studio/
 │   │   ├── components.ts       # Metadados de portas, dimensões e simbologia
 │   │   ├── componentGeometry.ts # Orientação e geometria de componentes/portas
 │   │   ├── logic.ts            # Avaliação de operadores booleanos com dominância
-│   │   └── simulator.ts        # Simulador de netlist (Union-Find, propagação e contenção)
+│   │   ├── logicAnalysis.ts    # Tabela-verdade, minimização booleana e mapas de Karnaugh
+│   │   ├── simulator.ts        # Simulador de netlist (Union-Find, propagação e contenção)
+│   │   └── testVectors.ts      # Execução isolada de sequências de teste
 │   ├── hooks/
 │   │   └── useCircuitPersistence.ts # Autosave local e recuperação de projetos
 │   ├── store/

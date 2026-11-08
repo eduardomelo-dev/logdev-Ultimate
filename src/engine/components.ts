@@ -1,4 +1,4 @@
-import { ComponentCategory, ComponentType, Port } from '../types/circuit';
+import { ComponentCategory, ComponentInstance, ComponentType, Port } from '../types/circuit';
 
 export interface ComponentMetadata {
   type: ComponentType;
@@ -7,7 +7,7 @@ export interface ComponentMetadata {
   description: string;
   width: number;
   height: number;
-  getPorts: (inputs?: number, bitWidth?: number) => Port[];
+  getPorts: (inputs?: number, bitWidth?: number, component?: ComponentInstance) => Port[];
 }
 
 export const COMPONENT_METADATA: Record<ComponentType, ComponentMetadata> = {
@@ -74,10 +74,31 @@ export const COMPONENT_METADATA: Record<ComponentType, ComponentMetadata> = {
     description: 'Separa barramentos ou junta fios individuais',
     width: 20,
     height: 60,
-    getPorts: () => [
-      { id: 'combined', name: 'Barramento', type: 'inout', bitWidth: 2, relX: 0, relY: 30 },
-      { id: 'bit0', name: 'Bit 0', type: 'inout', bitWidth: 1, relX: 20, relY: 10 },
-      { id: 'bit1', name: 'Bit 1', type: 'inout', bitWidth: 1, relX: 20, relY: 50 },
+    getPorts: (_, bitWidth = 2) => {
+      const width = Math.max(2, Math.min(32, Math.floor(bitWidth)));
+      const height = Math.max(60, (width - 1) * 20 + 20);
+      return [
+        { id: 'combined', name: `Barramento (${width} bits)`, type: 'inout', bitWidth: width, relX: 0, relY: height / 2 },
+        ...Array.from({ length: width }, (_, index): Port => ({
+          id: `bit${index}`,
+          name: `Bit ${index}`,
+          type: 'inout',
+          bitWidth: 1,
+          relX: 20,
+          relY: 10 + index * 20,
+        })),
+      ];
+    },
+  },
+  JUNCTION: {
+    type: 'JUNCTION',
+    name: 'Junção',
+    category: 'wiring',
+    description: 'Une fios que passam por este ponto e permite criar ramificações',
+    width: 20,
+    height: 20,
+    getPorts: (_, bitWidth = 1) => [
+      { id: 'node', name: 'Junção', type: 'inout', bitWidth, relX: 10, relY: 10 },
     ],
   },
 
@@ -264,34 +285,116 @@ export const COMPONENT_METADATA: Record<ComponentType, ComponentMetadata> = {
     ],
   },
 
+  // --- ARITHMETIC ---
+  ADDER: {
+    type: 'ADDER',
+    name: 'Somador',
+    category: 'arithmetic',
+    description: 'Soma dois barramentos com carry de entrada e saída',
+    width: 90,
+    height: 80,
+    getPorts: (_, bitWidth = 4) => [
+      { id: 'a', name: 'A', type: 'in', bitWidth, relX: 0, relY: 20 },
+      { id: 'b', name: 'B', type: 'in', bitWidth, relX: 0, relY: 40 },
+      { id: 'carryIn', name: 'Carry in', type: 'in', bitWidth: 1, relX: 0, relY: 60 },
+      { id: 'sum', name: 'Soma', type: 'out', bitWidth, relX: 90, relY: 30 },
+      { id: 'carryOut', name: 'Carry out', type: 'out', bitWidth: 1, relX: 90, relY: 60 },
+    ],
+  },
+
   // --- PLEXERS ---
   MULTIPLEXER: {
     type: 'MULTIPLEXER',
     name: 'Multiplexador (MUX)',
     category: 'plexers',
-    description: 'Seleciona entre múltiplas entradas de dados',
+    description: 'Seleciona entre 2, 4 ou 8 entradas de dados',
     width: 50,
     height: 60,
-    getPorts: (_, bitWidth = 1) => [
-      { id: 'in0', name: 'Entrada 0', type: 'in', bitWidth, relX: 0, relY: 15 },
-      { id: 'in1', name: 'Entrada 1', type: 'in', bitWidth, relX: 0, relY: 45 },
-      { id: 'sel', name: 'Seleção', type: 'in', bitWidth: 1, relX: 25, relY: 60 },
-      { id: 'out', name: 'Saída', type: 'out', bitWidth, relX: 50, relY: 30 },
-    ],
+    getPorts: (inputs = 2, bitWidth = 1) => {
+      const inputCount = Math.max(2, Math.min(8, Math.floor(inputs)));
+      const height = Math.max(60, (inputCount + 1) * 20);
+      const ports: Port[] = Array.from({ length: inputCount }, (_, index) => ({
+        id: `in${index}`,
+        name: `Entrada ${index}`,
+        type: 'in',
+        bitWidth,
+        relX: 0,
+        relY: Math.round(height * (index + 1) / (inputCount + 1)),
+      }));
+      ports.push(
+        { id: 'sel', name: 'Seleção', type: 'in', bitWidth: Math.ceil(Math.log2(inputCount)), relX: 25, relY: height },
+        { id: 'out', name: 'Saída', type: 'out', bitWidth, relX: 50, relY: height / 2 },
+      );
+      return ports;
+    },
   },
   DEMULTIPLEXER: {
     type: 'DEMULTIPLEXER',
     name: 'Demultiplexador (DEMUX)',
     category: 'plexers',
-    description: 'Encaminha a entrada para uma das saídas',
+    description: 'Encaminha a entrada para 2, 4 ou 8 saídas',
     width: 50,
     height: 60,
-    getPorts: (_, bitWidth = 1) => [
-      { id: 'in', name: 'Entrada', type: 'in', bitWidth, relX: 0, relY: 30 },
-      { id: 'sel', name: 'Seleção', type: 'in', bitWidth: 1, relX: 25, relY: 60 },
-      { id: 'out0', name: 'Saída 0', type: 'out', bitWidth, relX: 50, relY: 15 },
-      { id: 'out1', name: 'Saída 1', type: 'out', bitWidth, relX: 50, relY: 45 },
-    ],
+    getPorts: (inputs = 2, bitWidth = 1) => {
+      const outputCount = Math.max(2, Math.min(8, Math.floor(inputs)));
+      const height = Math.max(60, (outputCount + 1) * 20);
+      const ports: Port[] = [
+        { id: 'in', name: 'Entrada', type: 'in', bitWidth, relX: 0, relY: height / 2 },
+        { id: 'sel', name: 'Seleção', type: 'in', bitWidth: Math.ceil(Math.log2(outputCount)), relX: 25, relY: height },
+      ];
+      ports.push(...Array.from({ length: outputCount }, (_, index) => ({
+        id: `out${index}`,
+        name: `Saída ${index}`,
+        type: 'out' as const,
+        bitWidth,
+        relX: 50,
+        relY: Math.round(height * (index + 1) / (outputCount + 1)),
+      })));
+      return ports;
+    },
+  },
+  DECODER: {
+    type: 'DECODER',
+    name: 'Decodificador',
+    category: 'plexers',
+    description: 'Ativa uma saída one-hot conforme o endereço binário',
+    width: 80,
+    height: 80,
+    getPorts: (_, bitWidth = 2) => {
+      const selectWidth = Math.max(1, Math.min(5, Math.floor(bitWidth)));
+      const outputCount = 2 ** selectWidth;
+      const height = Math.max(80, (outputCount + 1) * 12);
+      return [
+        { id: 'sel', name: 'Endereço', type: 'in', bitWidth: selectWidth, relX: 0, relY: height / 2 },
+        { id: 'enable', name: 'Habilitar', type: 'in', bitWidth: 1, relX: 40, relY: height },
+        ...Array.from({ length: outputCount }, (_, index): Port => ({
+          id: `out${index}`,
+          name: `Saída ${index}`,
+          type: 'out',
+          bitWidth: 1,
+          relX: 80,
+          relY: Math.round(height * (index + 1) / (outputCount + 1)),
+        })),
+      ];
+    },
+  },
+  PRIORITY_ENCODER: {
+    type: 'PRIORITY_ENCODER',
+    name: 'Codificador Prioritário',
+    category: 'plexers',
+    description: 'Codifica em binário a entrada ativa de maior índice',
+    width: 80,
+    height: 80,
+    getPorts: (_, bitWidth = 4) => {
+      const inputCount = Math.max(2, Math.min(32, Math.floor(bitWidth)));
+      const codeWidth = Math.ceil(Math.log2(inputCount));
+      const height = Math.max(80, (inputCount + 1) * 12);
+      return [
+        { id: 'in', name: 'Solicitações', type: 'in', bitWidth: inputCount, relX: 0, relY: height / 2 },
+        { id: 'code', name: 'Código', type: 'out', bitWidth: codeWidth, relX: 80, relY: height / 2 - 12 },
+        { id: 'valid', name: 'Válido', type: 'out', bitWidth: 1, relX: 80, relY: height / 2 + 12 },
+      ];
+    },
   },
 
   // --- MEMORY ---
@@ -386,5 +489,35 @@ export const COMPONENT_METADATA: Record<ComponentType, ComponentMetadata> = {
     getPorts: () => [
       { id: 'in', name: 'Entrada (4 bits)', type: 'in', bitWidth: 4, relX: 30, relY: 80 },
     ],
+  },
+  SUBCIRCUIT: {
+    type: 'SUBCIRCUIT',
+    name: 'Subcircuito',
+    category: 'wiring',
+    description: 'Bloco hierárquico reutilizável criado a partir de uma seleção',
+    width: 120,
+    height: 60,
+    getPorts: (_, __, component) => {
+      const ports = component?.subcircuit?.ports ?? [];
+      const inputCount = ports.filter(port => port.direction === 'in').length;
+      const outputCount = ports.filter(port => port.direction === 'out').length;
+      const count = Math.max(inputCount, outputCount);
+      const height = Math.max(60, (count + 1) * 20);
+      let inputIndex = 0;
+      let outputIndex = 0;
+
+      return ports.map(port => {
+        const sideCount = port.direction === 'in' ? inputCount : outputCount;
+        const index = port.direction === 'in' ? inputIndex++ : outputIndex++;
+        return {
+          id: port.id,
+          name: port.name,
+          type: port.direction,
+          bitWidth: port.bitWidth,
+          relX: port.direction === 'in' ? 0 : 120,
+          relY: Math.round(height * (index + 1) / (sideCount + 1)),
+        };
+      });
+    },
   },
 };

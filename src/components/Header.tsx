@@ -12,12 +12,30 @@ import {
   FileText,
   Image as ImageIcon,
   Code2,
+  Table2,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
-import { LogdevLogo } from './LogdevLogo';
+import { Simulator } from '../engine/simulator';
 import { parseCircuitData } from '../utils/circuitPersistence';
+import brandLogo from '../assets/brand-logo.jpg';
 
-export const Header: React.FC = () => {
+function getProjectExportContext() {
+  const state = useCircuitStore.getState();
+  const project = state.getProjectCircuit();
+  const simulator = state.navigationStack.length === 0 ? state.simulator : new Simulator();
+  if (simulator !== state.simulator) {
+    simulator.setCircuit(project.components, project.wires);
+    simulator.step();
+    simulator.step();
+  }
+  return { project, simulator };
+}
+
+interface HeaderProps {
+  onOpenLogicAnalyzer: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenLogicAnalyzer }) => {
   const {
     tool,
     setTool,
@@ -27,17 +45,14 @@ export const Header: React.FC = () => {
     clockFrequency,
     setClockFrequency,
     resetCircuit,
-    components,
-    wires,
     loadCircuit,
-    simulator,
   } = useCircuitStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExportJson = () => {
-    const data = JSON.stringify({ components, wires }, null, 2);
+    const data = JSON.stringify(useCircuitStore.getState().getProjectCircuit(), null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -51,9 +66,10 @@ export const Header: React.FC = () => {
   const handleExportPdf = async () => {
     try {
       const { exportToPdf } = await import('../utils/exportUtils');
+      const { project, simulator } = getProjectExportContext();
       await exportToPdf(
-        components,
-        wires,
+        project.components,
+        project.wires,
         (compId, portId) => simulator.getPinValue(compId, portId),
         (compId, portId) => simulator.getNetValue(compId, portId),
         `logdev_circuito_${Date.now()}.pdf`
@@ -68,9 +84,10 @@ export const Header: React.FC = () => {
   const handleExportJpeg = async () => {
     try {
       const { exportToJpeg } = await import('../utils/exportUtils');
+      const { project, simulator } = getProjectExportContext();
       exportToJpeg(
-        components,
-        wires,
+        project.components,
+        project.wires,
         (compId, portId) => simulator.getPinValue(compId, portId),
         (compId, portId) => simulator.getNetValue(compId, portId),
         `logdev_circuito_${Date.now()}.jpg`
@@ -103,8 +120,12 @@ export const Header: React.FC = () => {
     <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-sm">
       {/* Brand & System Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-600 to-emerald-500 p-0.5 shadow-md shadow-cyan-950/30 flex items-center justify-center">
-          <LogdevLogo size={9} className="w-full h-full rounded-[10px] object-contain drop-shadow" />
+        <div className="w-9 h-9 overflow-hidden rounded-xl border border-slate-700 shadow-md shadow-cyan-950/30">
+          <img
+            src={brandLogo}
+            alt="Logdev Ultimate"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div>
           <div className="flex items-center gap-1.5">
@@ -148,6 +169,17 @@ export const Header: React.FC = () => {
         >
           <MousePointer className="w-4 h-4" />
           <span>Selecionar</span>
+        </button>
+
+        <div className="w-px h-5 bg-slate-800 mx-1" />
+
+        <button
+          onClick={onOpenLogicAnalyzer}
+          title="Abrir análise e verificação: tabela-verdade, cronograma e vetores de teste"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+        >
+          <Table2 className="h-4 w-4" />
+          <span>Analisar</span>
         </button>
 
         <div className="w-px h-5 bg-slate-800 mx-1" />
