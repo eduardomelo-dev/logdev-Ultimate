@@ -11,14 +11,17 @@ import {
   Trash2,
   Download,
   Upload,
-  Cpu,
   Undo2,
   Redo2,
   Sparkles,
   ChevronDown,
+  FileText,
+  Image as ImageIcon,
+  Code2,
 } from 'lucide-react';
 import { useCircuitStore } from '../store/circuitStore';
 import { clockCounterDemo, fullAdderDemo, srLatchDemo } from '../demos/sampleCircuits';
+import { exportToJpeg, exportToPdf } from '../utils/exportUtils';
 
 export const Header: React.FC = () => {
   const {
@@ -40,20 +43,45 @@ export const Header: React.FC = () => {
     components,
     wires,
     loadCircuit,
+    simulator,
   } = useCircuitStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showDemos, setShowDemos] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
-  const handleExport = () => {
+  const handleExportJson = () => {
     const data = JSON.stringify({ components, wires }, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `circuito_${Date.now()}.json`;
+    a.download = `logdev_circuito_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf(
+      components,
+      wires,
+      (compId, portId) => simulator.getPinValue(compId, portId),
+      (compId, portId) => simulator.getNetValue(compId, portId),
+      `logdev_circuito_${Date.now()}.pdf`
+    );
+    setShowExportMenu(false);
+  };
+
+  const handleExportJpeg = () => {
+    exportToJpeg(
+      components,
+      wires,
+      (compId, portId) => simulator.getPinValue(compId, portId),
+      (compId, portId) => simulator.getNetValue(compId, portId),
+      `logdev_circuito_${Date.now()}.jpg`
+    );
+    setShowExportMenu(false);
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,17 +109,22 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-20 shadow-md">
-      {/* Brand */}
+      {/* Brand & System Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-950/40">
-          <Cpu className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-600 to-emerald-500 p-0.5 shadow-lg shadow-cyan-950/50 flex items-center justify-center">
+          <img src="/icon.svg" alt="logdev" className="w-full h-full rounded-[10px] object-contain drop-shadow" />
         </div>
         <div>
-          <span className="font-bold text-base tracking-wide bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-            Logisim Studio
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-base tracking-wide bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+              logdev
+            </span>
+            <span className="text-[10px] bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
+              Ultimate
+            </span>
+          </div>
           <span className="text-[10px] text-slate-400 block -mt-0.5 tracking-wider uppercase font-semibold">
-            Digital Logic CAD
+            Digital Logic CAD & Simulator
           </span>
         </div>
       </div>
@@ -219,10 +252,13 @@ export const Header: React.FC = () => {
           </button>
         </div>
 
-        {/* File & Demo Actions */}
+        {/* Demos Menu */}
         <div className="relative">
           <button
-            onClick={() => setShowDemos(!showDemos)}
+            onClick={() => {
+              setShowDemos(!showDemos);
+              setShowExportMenu(false);
+            }}
             title="Carregar Circuitos de Exemplo"
             className="p-2 text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/50 rounded-lg transition text-xs flex items-center gap-1.5 border border-cyan-800/60"
           >
@@ -232,7 +268,7 @@ export const Header: React.FC = () => {
           </button>
 
           {showDemos && (
-            <div className="absolute right-0 top-11 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
+            <div className="absolute right-0 top-11 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
               <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
                 Circuitos Prontos
               </div>
@@ -258,6 +294,7 @@ export const Header: React.FC = () => {
           )}
         </div>
 
+        {/* Import */}
         <input
           type="file"
           ref={fileInputRef}
@@ -275,15 +312,61 @@ export const Header: React.FC = () => {
           <span className="hidden md:inline">Importar</span>
         </button>
 
-        <button
-          onClick={handleExport}
-          title="Exportar Circuito (JSON)"
-          className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
-        >
-          <Download className="w-4 h-4" />
-          <span className="hidden md:inline">Exportar</span>
-        </button>
+        {/* Export Dropdown Menu (JSON, PDF, JPEG) */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setShowExportMenu(!showExportMenu);
+              setShowDemos(false);
+            }}
+            title="Exportar Circuito (PDF, JPEG, JSON)"
+            className="p-2 text-slate-200 hover:text-white bg-gradient-to-r from-slate-800 to-slate-800/90 hover:from-slate-700 hover:to-slate-700/90 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700"
+          >
+            <Download className="w-4 h-4 text-cyan-400" />
+            <span className="hidden md:inline">Exportar</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
 
+          {showExportMenu && (
+            <div className="absolute right-0 top-11 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 z-50">
+              <div className="text-[10px] uppercase font-semibold text-slate-500 px-2 py-1">
+                Opções de Exportação
+              </div>
+              <button
+                onClick={handleExportPdf}
+                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+              >
+                <FileText className="w-4 h-4 text-red-400" />
+                <div>
+                  <div className="font-medium">Exportar PDF</div>
+                  <div className="text-[10px] text-slate-400">Diagrama em folha A4</div>
+                </div>
+              </button>
+              <button
+                onClick={handleExportJpeg}
+                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <div className="font-medium">Exportar JPEG</div>
+                  <div className="text-[10px] text-slate-400">Imagem de alta definição</div>
+                </div>
+              </button>
+              <button
+                onClick={handleExportJson}
+                className="w-full text-left px-2.5 py-2 rounded-lg text-xs text-slate-200 hover:bg-slate-800 hover:text-cyan-400 flex items-center gap-2 transition"
+              >
+                <Code2 className="w-4 h-4 text-cyan-400" />
+                <div>
+                  <div className="font-medium">Exportar JSON</div>
+                  <div className="text-[10px] text-slate-400">Arquivo de projeto nativo</div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Clear Canvas */}
         <button
           onClick={resetCircuit}
           title="Limpar Área de Trabalho"

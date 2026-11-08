@@ -22,3 +22,7 @@ HTMLCanvasElement.prototype.getContext = () => ({
   closePath: () => {},
   strokeRect: () => {},
 } as any);
+
+HTMLCanvasElement.prototype.toDataURL = () =>
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+

@@ -1,8 +1,8 @@
 {
-  "name": "logisim-studio",
+  "name": "logdev-ultimate",
   "private": true,
   "version": "1.0.0",
-  "description": "Logisim Studio - Modern Digital Logic CAD & Simulator",
+  "description": "logdev-Ultimate - Modern Digital Logic CAD & Simulator",
   "author": {
     "name": "Eduardo Melo",
     "email": "eduardomelo.dev@gmail.com"
@@ -17,11 +17,11 @@
     "electron:start": "electron .",
     "dist": "npm run build && electron-builder",
     "dist:linux": "npm run build && electron-builder --linux rpm",
-    "dist:win": "npm run build && electron-builder --win nsis"
+    "dist:win": "npm run build && electron-builder --win nsis portable"
   },
   "build": {
-    "appId": "com.logisimstudio.app",
-    "productName": "Logisim Studio",
+    "appId": "com.logdev.ultimate",
+    "productName": "logdev-Ultimate",
     "directories": {
       "output": "release"
     },
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.454.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

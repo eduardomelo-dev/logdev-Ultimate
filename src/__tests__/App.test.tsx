@@ -5,7 +5,8 @@ import App from '../App';
 describe('App Layout', () => {
   it('renders header, component sidebar, and canvas area', () => {
     render(<App />);
-    expect(screen.getByText(/Logisim Studio/i)).toBeDefined();
+    expect(screen.getByText(/logdev/i)).toBeDefined();
+    expect(screen.getByText(/Ultimate/i)).toBeDefined();
     expect(screen.getByPlaceholderText(/Buscar componentes/i)).toBeDefined();
     expect(screen.getByText(/Portas Lógicas/i)).toBeDefined();
   });
