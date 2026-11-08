@@ -2,6 +2,16 @@ import { BitVector, ComponentInstance, LogicValue, Wire } from '../types/circuit
 import { COMPONENT_METADATA } from './components';
 import { evaluateGate, resolveBus } from './logic';
 
+/**
+ * logdev-Ultimate - Netlist Propagation Simulator
+ * 
+ * Performs topological and iterative discrete digital logic simulation.
+ * Key properties:
+ * 1. 4-state logic evaluation ('0', '1', 'Z', 'X')
+ * 2. Multi-driver contention resolution (opposite active drivers resolve to 'X')
+ * 3. Bus width mismatch detection across electrical nets
+ * 4. Iteration limit protection against infinite sequential oscillations
+ */
 export class Simulator {
   private components: Map<string, ComponentInstance> = new Map();
   private wires: Wire[] = [];
@@ -16,6 +26,9 @@ export class Simulator {
 
   constructor() {}
 
+  /**
+   * Initializes and loads circuit components and wiring into the simulator.
+   */
   public setCircuit(components: ComponentInstance[], wires: Wire[]) {
     this.components.clear();
     for (const c of components) {

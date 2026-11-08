@@ -18,40 +18,72 @@ interface HistorySnapshot {
   wires: Wire[];
 }
 
+/**
+ * Global Zustand state and actions for logdev-Ultimate.
+ */
 interface CircuitStoreState {
+  /** Active components placed on canvas */
   components: ComponentInstance[];
+  /** Electrical wires connecting components */
   wires: Wire[];
+  /** IDs of currently selected components or wires */
   selectedIds: string[];
+  /** Active user interaction tool ('select' | 'poke' | 'wire' | 'delete') */
   tool: ToolType;
+  /** Canvas viewport zoom scale factor (0.3 to 2.5) */
   zoom: number;
+  /** Canvas pan translation offset (X, Y) */
   pan: Point;
+  /** Whether the continuous simulation clock is ticking */
   isSimulating: boolean;
-  clockFrequency: number; // in Hz
+  /** Clock frequency in Hertz (1-20 Hz) */
+  clockFrequency: number;
+  /** Total simulation clock ticks elapsed */
   ticks: number;
+  /** Engine simulator instance */
   simulator: Simulator;
 
-  // History for Undo/Redo
+  /** Snapshots for full Undo/Redo support */
   history: HistorySnapshot[];
+  /** Current index in the undo/redo history stack */
   historyIndex: number;
 
   // Actions
+  /** Adds a new component to the canvas at given coordinates */
   addComponent: (type: ComponentType, x: number, y: number) => ComponentInstance;
+  /** Updates component properties or position */
   updateComponent: (id: string, updates: Partial<ComponentInstance>) => void;
+  /** Selects or deselects an element */
   selectElement: (id: string, multi?: boolean) => void;
+  /** Clears selection */
   clearSelection: () => void;
+  /** Removes selected components and auto-cleans orphan wires */
   removeSelected: () => void;
+  /** Connects two ports with an orthogonal wire */
   addWire: (from: WireEndpoint, to: WireEndpoint, points: Point[]) => Wire;
+  /** Removes a wire by ID */
   removeWire: (wireId: string) => void;
+  /** Sets current interactive tool */
   setTool: (tool: ToolType) => void;
+  /** Updates zoom level */
   setZoom: (zoom: number | ((prev: number) => number)) => void;
+  /** Updates pan offset */
   setPan: (pan: Point | ((prev: Point) => Point)) => void;
+  /** Direct toggle in Poke mode for input pins and switches */
   togglePinValue: (componentId: string) => void;
+  /** Advances simulation by 1 tick */
   stepSimulation: () => void;
+  /** Starts or pauses continuous simulation */
   setRunning: (running: boolean) => void;
+  /** Configures clock frequency in Hz */
   setClockFrequency: (freq: number) => void;
+  /** Resets canvas and clears workspace */
   resetCircuit: () => void;
+  /** Loads complete circuit JSON */
   loadCircuit: (circuit: CircuitState) => void;
+  /** Reverts to previous state snapshot */
   undo: () => void;
+  /** Advances to next state snapshot */
   redo: () => void;
 }
 
